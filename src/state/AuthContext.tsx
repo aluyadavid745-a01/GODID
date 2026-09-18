@@ -1,7 +1,9 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { getApp, getApps, initializeApp } from "firebase/app";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import type { Role } from "../types/domain";
-import { authApi, apiConfigured } from "../services/api";
+import { firebaseConfig, firebaseConfigured } from "../services/firebaseConfig";
 
 interface User {
   id: string;
@@ -26,12 +28,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem("godid-auth");
     return saved ? JSON.parse(saved) as User : null;
   });
-  const isReady = true;
+  const [isReady, setIsReady] = useState(!firebaseConfigured);
+  const auth = useMemo(() => {
+    if (!firebaseConfigured) return null;
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    return getAuth(app);
+  }, []);
+
   const persist = (next: User | null) => {
     setUser(next);
     if (next) localStorage.setItem("godid-auth", JSON.stringify(next));
     else localStorage.removeItem("godid-auth");
   };
+
+  useEffect(() => {
+    if (!auth) return undefined;
+    return onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        localStorage.removeItem("godid-api-token");
+        persist(null);
+        setIsReady(true);
+        return;
+      }
+      const token = await firebaseUser.getIdToken();
+      const claims = await firebaseUser.getIdTokenResult();
+      localStorage.setItem("godid-api-token", token);
+      persist({
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName ?? firebaseUser.email ?? "GODID Admin",
+        email: firebaseUser.email ?? "",
+        role: claims.claims.admin === true ? "admin" : "customer",
+      });
+      setIsReady(true);
+    });
+  }, [auth]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -39,11 +69,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin: user?.role === "admin",
       isReady,
       login: async (email, password, role = "customer") => {
-        if (apiConfigured && import.meta.env.VITE_DEMO_MODE !== "true") {
-          if (role !== "admin") throw new Error("Customer accounts are not enabled on this demo backend yet.");
-          const result = await authApi.login(email, password);
-          localStorage.setItem("godid-api-token", result.token);
-          persist(result.user);
+        if (firebaseConfigured && import.meta.env.VITE_DEMO_MODE !== "true") {
+          const credential = await signInWithEmailAndPassword(auth!, email.trim(), password);
+          const tokenResult = await credential.user.getIdTokenResult(true);
+          if (role === "admin" && tokenResult.claims.admin !== true) {
+            await signOut(auth!);
+            throw new Error("This Firebase account does not have the GODID admin claim.");
+          }
+          localStorage.setItem("godid-api-token", await credential.user.getIdToken());
+          persist({
+            id: credential.user.uid,
+            name: credential.user.displayName ?? credential.user.email ?? "GODID Admin",
+            email: credential.user.email ?? email.trim().toLowerCase(),
+            role,
+          });
           return;
         }
         if (import.meta.env.VITE_DEMO_MODE !== "true") throw new Error("Admin/customer login is disabled until a secure non-Firebase auth server is configured.");
@@ -55,7 +94,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (password.length < 8) throw new Error("Password must be at least 8 characters.");
         persist({ id: "customer-demo", name: name.trim(), email: email.trim().toLowerCase(), role: "customer" });
       },
-      logout: () => { localStorage.removeItem("godid-api-token"); persist(null); },
+      logout: () => {
+        localStorage.removeItem("godid-api-token");
+        if (auth) void signOut(auth);
+        persist(null);
+      },
     }),
     [isReady, user],
   );

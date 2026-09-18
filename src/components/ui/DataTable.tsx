@@ -8,7 +8,7 @@ export interface Column<T> {
 
 export const DataTable = <T,>({ columns, rows, empty = "No records found." }: { columns: Column<T>[]; rows: T[]; empty?: string }) => (
   <div className="min-w-0">
-    <div className="grid gap-3 md:hidden">
+    <div className="grid gap-3 xl:hidden">
       {rows.length ? rows.map((row, index) => (
         <article key={index} className="grid gap-3 border border-line bg-white p-4 text-sm">
           {columns.map((column) => (
@@ -20,7 +20,7 @@ export const DataTable = <T,>({ columns, rows, empty = "No records found." }: { 
         </article>
       )) : <div className="border border-line bg-white px-4 py-10 text-center text-sm text-muted">{empty}</div>}
     </div>
-    <div className="admin-scrollbar hidden overflow-x-auto border border-line bg-white md:block">
+    <div className="admin-scrollbar hidden overflow-x-auto border border-line bg-white xl:block">
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
       <thead className="bg-bone text-xs uppercase tracking-[0.12em] text-muted">
         <tr>{columns.map((column) => <th key={column.key} className="px-4 py-3 font-bold">{column.header}</th>)}</tr>

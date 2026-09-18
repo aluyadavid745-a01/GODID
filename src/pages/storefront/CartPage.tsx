@@ -37,20 +37,20 @@ export const CartPage = () => {
             const variant = product?.variants.find((entry) => entry.id === item.variantId);
             if (!product || !variant) return null;
             return (
-              <article key={`${item.productId}-${item.variantId}`} className="grid gap-4 border border-line bg-porcelain p-4 sm:grid-cols-[120px_1fr_auto]">
-                <img src={product.images[0]} alt={product.name} className="aspect-[4/5] object-cover" />
-                <div>
-                  <Link to={`/product/${product.slug}`} className="font-display text-xl font-semibold">{product.name}</Link>
+              <article key={`${item.productId}-${item.variantId}`} className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-4 border border-line bg-porcelain p-3 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:p-4">
+                <img src={product.images[0]} alt={product.name} className="h-28 w-[88px] object-cover sm:h-[150px] sm:w-[120px]" />
+                <div className="min-w-0">
+                  <Link to={`/product/${product.slug}`} className="font-display text-base font-semibold sm:text-xl">{product.name}</Link>
                   <p className="mt-2 text-sm text-muted">{variant.color} / {variant.size}</p>
                   <button className="mt-5 text-sm font-semibold underline" onClick={() => removeItem(item.productId, item.variantId)}>Remove</button>
                 </div>
-                <div className="flex items-center justify-between gap-6 sm:block sm:text-right">
+                <div className="col-span-2 flex items-center justify-between gap-3 border-t border-line pt-3 sm:col-span-1 sm:block sm:border-0 sm:pt-0 sm:text-right">
                   <div className="inline-flex border border-line bg-white">
                     <button className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}>-</button>
                     <span className="min-w-8 px-2 py-1 text-center">{item.quantity}</span>
                     <button className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}>+</button>
                   </div>
-                  <p className="mt-4 font-semibold">{formatNaira((product.salePrice ?? product.price) * item.quantity)}</p>
+                  <p className="font-semibold sm:mt-4">{formatNaira((product.salePrice ?? product.price) * item.quantity)}</p>
                 </div>
               </article>
             );
@@ -62,10 +62,10 @@ export const CartPage = () => {
             <div className="grid gap-2">
               <Input label="Promo code" value={promo} onChange={(event) => setPromo(event.target.value.toUpperCase())} placeholder="WELCOME10" />
               <Button variant="secondary" onClick={applyPromo} disabled={!items.length || !promo}>Apply code</Button>
-              {promoMessage ? <p className={`text-sm font-semibold ${discount ? "text-palm" : "text-clay"}`}>{promoMessage}</p> : null}
+              {promoMessage ? <p className={`text-sm font-semibold ${discount ? "text-accent" : "text-clay"}`}>{promoMessage}</p> : null}
             </div>
             <div className="flex justify-between"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
-            {discount ? <div className="flex justify-between text-palm"><span>Discount</span><span>-{formatNaira(discountValue)}</span></div> : null}
+            {discount ? <div className="flex justify-between text-accent"><span>Discount</span><span>-{formatNaira(discountValue)}</span></div> : null}
             <div className="flex justify-between text-muted"><span>Shipping</span><span>Calculated at checkout</span></div>
             <div className="border-t border-line pt-4 flex justify-between font-semibold"><span>Total</span><span>{formatNaira(Math.max(0, subtotal - discountValue))}</span></div>
             <Button to={discount ? `/checkout?discount=${discount.code}` : "/checkout"} disabled={!items.length}>

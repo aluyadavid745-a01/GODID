@@ -4,9 +4,9 @@ import { BrandLogo } from "../brand/BrandLogo";
 import { buildWhatsAppUrl } from "../../utils/whatsapp";
 
 const groups = {
-  Shop: ["/shop", "/shop/t-shirts", "/shop/hoodies", "/cart"],
-  Company: ["/about", "/contact", "/faq"],
-  Support: ["/track-order", "/shipping", "/returns", "/privacy-policy", "/terms"],
+  Shop: [{ label: "All products", to: "/shop" }, { label: "T-shirts", to: "/shop/t-shirts" }, { label: "Hoodies", to: "/shop/hoodies" }, { label: "Cart", to: "/cart" }],
+  Company: [{ label: "Our story", to: "/about" }, { label: "Contact", to: "/contact" }, { label: "FAQs", to: "/faq" }],
+  Support: [{ label: "Track order", to: "/track-order" }, { label: "Nationwide delivery", to: "/shipping" }, { label: "Returns", to: "/returns" }, { label: "Privacy", to: "/privacy-policy" }, { label: "Terms", to: "/terms" }],
 };
 
 const socialLinks = [
@@ -17,24 +17,30 @@ const socialLinks = [
 ];
 
 export const Footer = () => (
-  <footer className="border-t border-line bg-ink text-white">
-    <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-[1.3fr_2fr] lg:px-8">
+  <footer className="border-t-4 border-accent bg-ink text-white">
+    <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 md:grid-cols-[1.3fr_2fr] lg:px-8 lg:py-20">
       <div>
-        <BrandLogo size="lg" invert />
-        <p className="mt-4 max-w-sm text-white/70">God in Every Design. Premium clothing designed and manufactured by an independent Nigerian fashion studio.</p>
+        <BrandLogo size="lg" />
+        <p className="mt-5 max-w-sm text-sm leading-7 text-white/65">God in Every Design. Purposeful clothing from an independent fashion studio, delivered nationwide across Nigeria.</p>
         <div className="mt-6 flex gap-3">
-          {socialLinks.filter((link) => Boolean(link.href)).map(({ icon: Icon, href, label }) => <a key={label} target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noreferrer" : undefined} className="grid h-10 w-10 place-items-center rounded-lg border border-white/20 transition hover:bg-white hover:text-ink" href={href} aria-label={label}><Icon size={18} /></a>)}
+          {socialLinks.filter((link) => Boolean(link.href)).map(({ icon: Icon, href, label }) => <a key={label} target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noreferrer" : undefined} className="grid h-10 w-10 place-items-center border border-white/20 transition hover:border-accent hover:bg-accent hover:text-white" href={href} aria-label={label}><Icon size={18} /></a>)}
         </div>
       </div>
-      <div className="grid gap-8 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {Object.entries(groups).map(([label, links]) => (
           <div key={label}>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.14em] text-white/50">{label}</h3>
-            <div className="grid gap-3">
-              {links.map((to) => <Link key={to} to={to} className="text-sm text-white/80 hover:text-white">{to.split("/").filter(Boolean).join(" ").replace(/-/g, " ") || "Home"}</Link>)}
+            <h3 className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">{label}</h3>
+            <div className="grid gap-3.5">
+              {links.map(({ label: linkLabel, to }) => <Link key={to} to={to} className="text-sm text-white/75 transition hover:text-white">{linkLabel}</Link>)}
             </div>
           </div>
         ))}
+      </div>
+    </div>
+    <div className="border-t border-white/15">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-[11px] uppercase tracking-[0.14em] text-white/45 sm:flex-row sm:justify-between lg:px-8">
+        <span>© {new Date().getFullYear()} GODID</span>
+        <span>God in Every Design · Delivery nationwide</span>
       </div>
     </div>
   </footer>

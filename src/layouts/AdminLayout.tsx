@@ -1,5 +1,6 @@
-import { BarChart3, Boxes, Gift, Home, LayoutDashboard, LogOut, Package, Settings, ShoppingCart, Tags, Truck, Users } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { BarChart3, Boxes, Gift, Home, LayoutDashboard, LogOut, Menu, Package, Settings, ShoppingCart, Tags, Truck, Users, X } from "lucide-react";
+import { useState } from "react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { useAuth } from "../state/AuthContext";
 
@@ -20,7 +21,9 @@ const nav = [
 export const AdminLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
   const signOut = () => {
+    setMenuOpen(false);
     logout();
     navigate("/admin/login");
   };
@@ -30,7 +33,7 @@ export const AdminLayout = () => {
       <aside className="hidden border-r border-line bg-white lg:block">
         <div className="sticky top-0 flex h-screen flex-col">
           <div className="border-b border-line p-5">
-            <BrandLogo to="/" size="md" />
+            <BrandLogo to="/" size="md" variant="admin" />
             <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Admin Console</p>
           </div>
           <nav className="admin-scrollbar flex-1 overflow-y-auto p-3">
@@ -49,20 +52,23 @@ export const AdminLayout = () => {
       </aside>
       <div className="min-w-0">
         <div className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur lg:hidden">
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <BrandLogo to="/" size="sm" />
-            <div className="flex items-center gap-2">
-              <a href="/" className="border border-line px-3 py-2 text-xs font-bold uppercase tracking-[0.08em]">Store</a>
-              <button className="border border-line px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-muted" onClick={signOut}>Logout</button>
-            </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+            <BrandLogo to="/" size="sm" variant="admin" />
+            <button type="button" className="focus-ring grid h-11 w-11 shrink-0 place-items-center border border-line" onClick={() => setMenuOpen((open) => !open)} aria-label={menuOpen ? "Close admin menu" : "Open admin menu"} aria-expanded={menuOpen} aria-controls="admin-mobile-nav">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
           </div>
-          <nav className="admin-scrollbar flex gap-2 overflow-x-auto px-4 pb-3">
-            {nav.map(({ label, to, icon: Icon }) => (
-              <NavLink key={to} end={to === "/admin"} to={to} className={({ isActive }) => `flex shrink-0 items-center gap-2 border px-3 py-2 text-xs font-bold transition ${isActive ? "border-ink bg-ink text-white" : "border-line bg-porcelain text-muted"}`}>
-                <Icon size={15} /> {label}
-              </NavLink>
-            ))}
-          </nav>
+          {menuOpen ? <div id="admin-mobile-nav" className="admin-scrollbar max-h-[calc(100dvh-70px)] overflow-y-auto border-t border-line px-4 py-4">
+            <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {nav.map(({ label, to, icon: Icon }) => (
+                <NavLink key={to} end={to === "/admin"} to={to} onClick={() => setMenuOpen(false)} className={({ isActive }) => `flex min-h-11 min-w-0 items-center gap-2 border px-3 py-2 text-sm font-semibold transition ${isActive ? "border-ink bg-ink text-white" : "border-line bg-porcelain text-ink hover:border-ink"}`}>
+                  <Icon size={17} className="shrink-0" /> <span className="truncate">{label}</span>
+                </NavLink>
+              ))}
+            </nav>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+              <Link to="/" onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-semibold"><Home size={16} /> View store</Link>
+              <button type="button" className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-semibold" onClick={signOut}><LogOut size={16} /> Logout</button>
+            </div>
+          </div> : null}
         </div>
         <header className="border-b border-line bg-[#f6f7f8]/90 px-4 py-4 backdrop-blur lg:sticky lg:top-0 lg:z-30 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

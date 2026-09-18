@@ -1,4 +1,5 @@
 import { categories, collections, customers, discounts, homepageContent, orders, products, shippingZones, storeSettings } from "../data/mockData";
+import { NIGERIAN_STATES } from "../data/nigeria";
 import type { Address, CartItem, Category, Collection, ContentPage, Customer, Discount, HomepageContent, InventoryHistoryEntry, MoneySummary, NotificationRecord, Order, OrderStatus, PaymentStatus, Product, ProductStatus, ShippingZone, StoreSettings } from "../types/domain";
 
 const delay = <T,>(value: T, ms = 120) => new Promise<T>((resolve) => window.setTimeout(() => resolve(value), ms));
@@ -35,7 +36,7 @@ const contentPages: ContentPage[] = [
   { slug: "about", title: "About GODID", intro: "GODID means God in Every Design: original clothing shaped by purpose, Nigerian rhythm, careful fabrics, and controlled production.", sections: [{ heading: "Studio Point Of View", body: "Every piece starts with fit, movement, and intent before it becomes a garment. We focus on premium essentials, statement layers, and refined everyday silhouettes." }, { heading: "Production", body: "Drops are produced in small batches so the team can keep tighter control over material quality, finishing, and inventory." }] },
   { slug: "contact", title: "Contact", intro: "Speak with GODID for orders, sizing, delivery, wholesale, or studio enquiries.", sections: [{ heading: "Customer Care", body: "Complete orders on WhatsApp through +234 705 541 9856 with your order number and the email used at checkout." }, { heading: "Response Window", body: "Support replies are handled Monday to Saturday. Delivery updates are sent as soon as the order status changes." }] },
   { slug: "faq", title: "FAQ", intro: "Answers to common questions about sizing, orders, payments, and care.", sections: [{ heading: "How Do I Choose A Size?", body: "Each product page includes available sizes and variant options. If you are between sizes, choose the fit that matches how you like structured garments to sit." }, { heading: "How Do I Complete Payment?", body: "The website records your order for the admin team, then sends you to WhatsApp with your order details and product image URLs so payment and delivery can be confirmed with GODID directly." }, { heading: "Can I Change My Order?", body: "Contact support quickly with your order number. Changes are easiest before an order moves into processing or shipped status." }] },
-  { slug: "shipping", title: "Shipping", intro: "GODID ships across Nigeria using admin-managed delivery zones.", sections: [{ heading: "Delivery Pricing", body: "Shipping is calculated at checkout from the current admin zone for your state. Lagos, South West, FCT, South South, and other-state fallback zones are configured." }, { heading: "Order Tracking", body: "Your confirmation page shows the order number and the admin team can update status from confirmed through delivered." }] },
+  { slug: "shipping", title: "Shipping", intro: "GODID delivers nationwide across Nigeria using delivery zones for each state.", sections: [{ heading: "Delivery Pricing", body: "Shipping is calculated at checkout from the delivery zone for your state. Nationwide coverage includes Lagos, South West, FCT, South South, and an other-state zone." }, { heading: "Order Tracking", body: "Your confirmation page shows the order number and the admin team can update status from confirmed through delivered." }] },
   { slug: "returns", title: "Returns", intro: "Returns are reviewed against garment condition, order status, and delivery timing.", sections: [{ heading: "Eligibility", body: "Items should be unworn, unwashed, and returned with original packaging. Sale or limited-run items may have tighter return rules." }, { heading: "How To Start", body: "Contact support with your order number, item name, size, reason, and clear photos where relevant." }] },
   { slug: "privacy-policy", title: "Privacy Policy", intro: "GODID only asks for the information needed to run customer accounts, carts, checkout, delivery, and order support.", sections: [{ heading: "Customer Data", body: "Checkout collects name, email, phone number, and delivery address so orders can be processed and shipped." }, { heading: "Payments", body: "Payments are completed directly with GODID on WhatsApp. The website stores order references and payment status, not card information." }] },
   { slug: "terms", title: "Terms", intro: "These terms explain how orders, product availability, pricing, and customer accounts work on GODID.", sections: [{ heading: "Product Availability", body: "Products are sold by variant and inventory can change as orders are placed or stock is adjusted by the admin team." }, { heading: "Pricing", body: "Prices are shown in Nigerian Naira. Discounts, shipping, and totals are calculated during cart and checkout flows." }] },
@@ -170,7 +171,21 @@ export const commerceApi = {
   createOrder: async (payload: { customer: { name: string; email: string; phone: string }; address: Address; items: CartItem[]; discountCode?: string }) => {
     if (API_BASE_URL && !demoMode) {
       const totals = await commerceApi.calculateTotals(payload.items, payload.discountCode, payload.address.state);
-      return requestApi<Order>("/orders", { method: "POST", body: JSON.stringify({ ...payload, totals, shipping: totals.shipping, discount: totals.discount }) });
+      const store = loadStore();
+      const items = payload.items.map((item) => {
+        const product = store.products.find((entry) => entry.id === item.productId);
+        const variant = product?.variants.find((entry) => entry.id === item.variantId);
+        return {
+          ...item,
+          productName: product?.name,
+          image: product?.images[0],
+          sku: variant?.sku,
+          color: variant?.color,
+          size: variant?.size,
+          unitPrice: product ? product.salePrice ?? product.price : undefined,
+        };
+      });
+      return requestApi<Order>("/orders", { method: "POST", body: JSON.stringify({ ...payload, items, totals, shipping: totals.shipping, discount: totals.discount }) });
     }
     if (!demoMode && !API_BASE_URL) throw new Error("Checkout is not configured for launch. Set VITE_API_BASE_URL to the deployed GODID API.");
     const totals = await commerceApi.calculateTotals(payload.items, payload.discountCode, payload.address.state);
@@ -290,7 +305,7 @@ export const adminApi = {
     const order = loadStore().orders.find((item) => item.orderNumber.toUpperCase() === normalized && (!normalizedEmail || item.customerEmail.toLowerCase() === normalizedEmail));
     return delay(order);
   },
-  notifications: () => delay(loadStore().notifications),
+  notifications: () => apiConfigured && !demoMode ? requestApi<NotificationRecord[]>("/admin/notifications") : delay(loadStore().notifications),
   inventoryHistory: () => delay(loadStore().inventoryHistory),
   discounts: () => delay(loadStore().discounts),
   shippingZones: () => delay(loadStore().shippingZones),
@@ -385,10 +400,23 @@ export const adminApi = {
     return id;
   })),
   saveShippingZone: (payload: ShippingZone) => delay(updateStore((state) => {
-    const index = state.shippingZones.findIndex((item) => item.id === payload.id);
-    if (index >= 0) state.shippingZones[index] = payload;
-    else state.shippingZones.unshift(payload);
-    return payload;
+    const name = payload.name.trim();
+    const states = [...new Set(payload.states)];
+    if (!name) throw new Error("Enter a shipping zone name.");
+    if (!Number.isFinite(payload.price) || payload.price < 0) throw new Error("Enter a valid shipping price.");
+    if (payload.id !== "ship-other" && !states.length) throw new Error("Add at least one state to this zone.");
+    if (states.some((item) => !NIGERIAN_STATES.includes(item))) throw new Error("Choose states from the Nigerian state list.");
+    const zone = { ...payload, name, states, active: payload.id === "ship-other" ? true : payload.active };
+    state.shippingZones = state.shippingZones.map((item) => item.id === zone.id ? zone : { ...item, states: item.states.filter((state) => !states.includes(state)) });
+    if (!state.shippingZones.some((item) => item.id === zone.id)) state.shippingZones.unshift(zone);
+    return zone;
+  })),
+  deleteShippingZone: (id: string) => delay(updateStore((state) => {
+    if (id === "ship-other") throw new Error("The Other States fallback zone cannot be deleted.");
+    const zone = state.shippingZones.find((item) => item.id === id);
+    if (!zone) throw new Error("Shipping zone not found.");
+    state.shippingZones = state.shippingZones.filter((item) => item.id !== id);
+    return zone;
   })),
   updateHomepage: (payload: HomepageContent) => delay(updateStore((state) => {
     state.homepageContent = payload;

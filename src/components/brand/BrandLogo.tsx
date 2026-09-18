@@ -1,30 +1,32 @@
 import { Link } from "react-router-dom";
-import logo from "../../assets/dd.png";
+import adminLogo from "../../assets/admin-logo.jpeg";
+import storefrontLogo from "../../assets/storefront-logo.jpeg";
 
 type BrandLogoSize = "sm" | "md" | "lg";
 
-const imageSizes: Record<BrandLogoSize, string> = {
-  sm: "h-12 w-12",
-  md: "h-16 w-16",
-  lg: "h-24 w-24",
+const adminSizes: Record<BrandLogoSize, string> = {
+  sm: "h-11 w-11",
+  md: "h-14 w-14",
+  lg: "h-20 w-20",
 };
 
-const textSizes: Record<BrandLogoSize, string> = {
-  sm: "text-xl",
-  md: "text-2xl",
-  lg: "text-3xl",
+const storefrontSizes: Record<BrandLogoSize, string> = {
+  sm: "h-12 w-40",
+  md: "h-14 w-44",
+  lg: "h-20 w-56",
 };
 
-export const BrandLogo = ({ to, size = "md", stacked = false, invert = false, label = "GODID" }: { to?: string; size?: BrandLogoSize; stacked?: boolean; invert?: boolean; label?: string }) => {
-  const content = (
-    <span className={`inline-flex ${stacked ? "flex-col items-start gap-2" : "items-center gap-3"}`}>
-      <span className={`${imageSizes[size]} grid shrink-0 place-items-center overflow-hidden rounded-lg bg-white/85 p-1.5 shadow-soft ring-1 ${invert ? "ring-white/15" : "ring-line/80"}`}>
-        <img src={logo} alt="" className="h-full w-full object-contain" />
-      </span>
-      <span className={`font-display font-bold tracking-tight ${textSizes[size]} ${invert ? "text-white" : "text-ink"}`}>{label}</span>
+export const BrandLogo = ({ to, size = "md", variant = "storefront" }: { to?: string; size?: BrandLogoSize; variant?: "admin" | "storefront" }) => {
+  const isAdmin = variant === "admin";
+  const content = isAdmin ? (
+    <span className="inline-flex items-center gap-2.5">
+      <img src={adminLogo} alt="" className={`${adminSizes[size]} shrink-0 rounded-md object-cover`} />
+      <span className="max-w-32 font-display text-xs font-bold uppercase leading-tight tracking-[0.08em] text-ink sm:text-sm">God in Every Design</span>
     </span>
+  ) : (
+    <img src={storefrontLogo} alt="GODID — God in Every Design" className={`${storefrontSizes[size]} block shrink-0 rounded-sm object-cover object-center`} />
   );
 
   if (to) return <Link to={to} aria-label="GODID home" className="focus-ring inline-flex">{content}</Link>;
-  return <span aria-label={label} className="inline-flex">{content}</span>;
+  return <span aria-label={isAdmin ? "GODID — God in Every Design" : undefined} className="inline-flex">{content}</span>;
 };

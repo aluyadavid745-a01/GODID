@@ -4,9 +4,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export const useScrollReveal = (selector = "[data-reveal]") => {
+export const useScrollReveal = (selector = "[data-reveal]", enabled = true) => {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!enabled || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>(selector).forEach((element) => {
         gsap.fromTo(
@@ -23,5 +23,5 @@ export const useScrollReveal = (selector = "[data-reveal]") => {
       });
     });
     return () => ctx.revert();
-  }, [selector]);
+  }, [selector, enabled]);
 };

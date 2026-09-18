@@ -23,7 +23,7 @@ export const CheckoutPage = () => {
   const [discountCode, setDiscountCode] = useState(() => searchParams.get("discount") ?? "");
   const [totals, setTotals] = useState<MoneySummary>({ subtotal: 0, discount: 0, shipping: 0, tax: 0, total: 0 });
   const [form, setForm] = useState<Address & { email: string }>({ id: "checkout-address", fullName: "", email: "", phone: "", state: "Lagos", city: "", street: "", apartment: "", instructions: "" });
-  useMeta("Checkout | GODID", "Place your GODID order and complete payment through WhatsApp in Nigeria.");
+  useMeta("Checkout | GODID", "Place your GODID order for nationwide delivery and complete payment through WhatsApp.");
 
   useEffect(() => {
     commerceApi.calculateTotals(items, discountCode, form.state).then(setTotals);
@@ -54,19 +54,19 @@ export const CheckoutPage = () => {
     <main className="mx-auto max-w-6xl px-4 py-12 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.16em] text-palm">WhatsApp order completion</p>
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-accent">WhatsApp order completion</p>
           <h1 className="mt-2 font-display text-5xl font-semibold">Checkout</h1>
         </div>
         <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm font-semibold shadow-soft">
-          <MessageCircle size={18} className="text-palm" />
+          <MessageCircle size={18} className="text-accent" />
           <span>{WHATSAPP_DISPLAY_NUMBER}</span>
         </div>
       </div>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
         <section className="rounded-lg border border-line bg-porcelain p-5 shadow-soft">
-          <div className="mb-8 grid gap-2 sm:grid-cols-4">
+          <div className="mb-8 grid grid-cols-4 gap-1 sm:gap-2">
             {["Customer", "Address", "Delivery", "WhatsApp"].map((label, index) => (
-              <div key={label} className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${index <= step ? "border-ink bg-ink text-white" : "border-line bg-white text-muted"}`}>
+              <div key={label} className={`min-w-0 rounded-md border px-1 py-2 text-center text-[10px] font-semibold leading-tight transition sm:px-3 sm:text-sm ${index <= step ? "border-ink bg-ink text-white" : "border-line bg-white text-muted"}`}>
                 {label}
               </div>
             ))}
@@ -90,7 +90,7 @@ export const CheckoutPage = () => {
           {step === 2 ? (
             <div className="grid gap-4">
               <div className="border border-line bg-white p-4">
-                <h2 className="font-semibold">Standard Nigerian delivery</h2>
+                <h2 className="font-semibold">Nationwide delivery</h2>
                 <p className="mt-2 text-sm text-muted">Shipping is calculated from the admin-managed zone for {form.state}.</p>
                 <p className="mt-4 font-display text-2xl font-semibold">{formatNaira(totals.shipping)}</p>
               </div>
@@ -101,7 +101,7 @@ export const CheckoutPage = () => {
             <div className="grid gap-4">
               <div className="overflow-hidden rounded-lg border border-line bg-white">
                 <div className="flex items-start gap-4 bg-ink p-5 text-white">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-palm">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-accent">
                     <MessageCircle size={22} />
                   </span>
                   <div>
@@ -111,11 +111,11 @@ export const CheckoutPage = () => {
                 </div>
                 <div className="grid gap-3 p-5 text-sm text-muted sm:grid-cols-2">
                   <div className="flex gap-3">
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-palm" />
+                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-accent" />
                     <span>Your order is saved for the GODID team before WhatsApp opens.</span>
                   </div>
                   <div className="flex gap-3">
-                    <ShieldCheck size={18} className="mt-0.5 shrink-0 text-palm" />
+                    <ShieldCheck size={18} className="mt-0.5 shrink-0 text-accent" />
                     <span>No payment gateway is used here. Payment and delivery are confirmed directly at {WHATSAPP_DISPLAY_NUMBER}.</span>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/Button";
 import { DataTable } from "../../components/ui/DataTable";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
+import { NIGERIAN_STATES } from "../../data/nigeria";
 import { adminApi } from "../../services/api";
 import type { ContentPage, Discount, DiscountType, HomepageContent, ShippingZone, StoreSettings } from "../../types/domain";
 import { formatDate, formatNaira, titleCase } from "../../utils/format";
@@ -116,23 +117,86 @@ export const AdminContent = () => {
 export const AdminShipping = () => {
   const [rows, setRows] = useState<ShippingZone[]>([]);
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const newZone = (): ShippingZone => ({ id: `ship-${Date.now()}`, name: "", states: [], price: 0, active: true });
+  const [form, setForm] = useState<ShippingZone>(() => newZone());
+  const [selectedState, setSelectedState] = useState("");
   useMeta("Shipping Zones | GODID", "Configure Nigerian shipping zones and prices.");
   const refresh = () => adminApi.shippingZones().then(setRows);
   useEffect(() => { refresh(); }, []);
-  const saveZone = async (zone: ShippingZone) => {
-    await adminApi.saveShippingZone(zone);
-    setNotice(`${zone.name} shipping saved.`);
-    refresh();
+  const saveZone = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    if (!form.name.trim()) return setError("Enter a zone name.");
+    if (!Number.isFinite(form.price) || form.price < 0) return setError("Enter a valid shipping price.");
+    if (form.id !== "ship-other" && !form.states.length) return setError("Add at least one state to this zone.");
+    try {
+      await adminApi.saveShippingZone(form);
+      setNotice(`${form.name.trim()} saved. Its states now use this delivery price.`);
+      setForm(newZone());
+      setSelectedState("");
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this zone.");
+    }
   };
+  const deleteZone = async (zone: ShippingZone) => {
+    if (!window.confirm(`Delete ${zone.name}? Its ${zone.states.length} assigned state${zone.states.length === 1 ? "" : "s"} will use the Other States rate.`)) return;
+    setError("");
+    try {
+      await adminApi.deleteShippingZone(zone.id);
+      if (form.id === zone.id) { setForm(newZone()); setSelectedState(""); }
+      setNotice(`${zone.name} deleted. Its states now use the Other States rate.`);
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete this zone.");
+    }
+  };
+  const fallback = rows.find((zone) => zone.id === "ship-other");
+  const assignedCount = new Set(rows.flatMap((zone) => zone.states)).size;
   return (
     <div className="grid gap-6">
-      <div><h2 className="font-display text-3xl font-semibold">Shipping Zones</h2><p className="text-muted">Configure Lagos, South West, South East, South South, North Central, North East, North West and other states.</p></div>
+      <div><h2 className="font-display text-3xl font-semibold">Shipping Zones</h2><p className="mt-1 text-muted">Set delivery prices for any Nigerian state or the FCT. States without a specific zone use the Other States rate.</p></div>
       {notice ? <div className="border border-palm bg-white p-3 text-sm font-semibold text-palm">{notice}</div> : null}
+      {error ? <div role="alert" className="border border-clay bg-white p-3 text-sm font-semibold text-clay">{error}</div> : null}
+      <form className="grid gap-5 border border-line bg-white p-5" onSubmit={saveZone}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div><h3 className="font-display text-xl font-semibold">{rows.some((zone) => zone.id === form.id) ? `Edit ${form.name}` : "Add a shipping zone"}</h3><p className="mt-1 text-sm text-muted">Choose one or more states. Assigning a state to this zone moves it from its previous zone.</p></div>
+          {rows.some((zone) => zone.id === form.id) ? <button type="button" className="text-sm font-semibold text-muted underline hover:text-ink" onClick={() => { setForm(newZone()); setSelectedState(""); setError(""); }}>Cancel edit</button> : null}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <Input label="Zone name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. South East" required />
+          <Input label="Delivery price (₦)" type="number" min="0" step="1" value={form.price} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} required />
+          <Select label="Status" value={form.active ? "active" : "paused"} disabled={form.id === "ship-other"} onChange={(event) => setForm({ ...form, active: event.target.value === "active" })} options={[{ label: "Active", value: "active" }, { label: "Paused", value: "paused" }]} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <Select label="Add state or FCT" value={selectedState} onChange={(event) => setSelectedState(event.target.value)} options={[{ label: "Select a state", value: "" }, ...NIGERIAN_STATES.filter((state) => !form.states.includes(state)).map((state) => {
+            const owner = rows.find((zone) => zone.id !== form.id && zone.states.includes(state));
+            return { label: owner ? `${state} · ${owner.name}` : state, value: state };
+          })]} />
+          <Button type="button" variant="secondary" disabled={!selectedState} onClick={() => { setForm((current) => ({ ...current, states: [...current.states, selectedState] })); setSelectedState(""); }}><Plus size={16} /> Add state</Button>
+        </div>
+        <div className="flex min-h-12 flex-wrap gap-2 border border-dashed border-line p-3">
+          {form.states.length ? form.states.map((state) => <button key={state} type="button" aria-label={`Remove ${state} from ${form.name || "zone"}`} className="inline-flex items-center gap-2 bg-bone px-3 py-2 text-xs font-semibold text-ink hover:bg-line" onClick={() => setForm((current) => ({ ...current, states: current.states.filter((item) => item !== state) }))}>{state}<span aria-hidden="true">×</span></button>) : <span className="self-center text-sm text-muted">Choose at least one state. The Other States zone covers any state you leave unassigned.</span>}
+        </div>
+        <Button type="submit" className="w-fit"><Save size={16} /> Save shipping zone</Button>
+      </form>
+      <details className="border border-line bg-white p-5">
+        <summary className="cursor-pointer font-semibold">State coverage: {assignedCount} of {NIGERIAN_STATES.length} assigned to specific zones</summary>
+        <p className="mt-2 text-sm text-muted">Unassigned states use {fallback?.name ?? "Other States"} at {formatNaira(fallback?.price ?? 0)}.</p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {NIGERIAN_STATES.map((state) => {
+            const zone = rows.find((item) => item.states.includes(state));
+            return <div key={state} className="flex min-w-0 justify-between gap-3 border-b border-line py-2 text-sm"><span>{state}</span><span className="text-right text-muted">{zone ? `${zone.name}${zone.active ? "" : " (paused)"}` : fallback?.name ?? "Other States"}</span></div>;
+          })}
+        </div>
+      </details>
       <DataTable<ShippingZone> rows={rows} columns={[
         { key: "name", header: "Zone", render: (row) => row.name },
-        { key: "states", header: "States", render: (row) => row.states.length ? row.states.join(", ") : "Fallback configurable states" },
-        { key: "price", header: "Price", render: (row) => <Input label="" type="number" defaultValue={row.price} onBlur={(event) => saveZone({ ...row, price: Number(event.target.value) })} /> },
-        { key: "active", header: "Active", render: (row) => <Select label="" value={row.active ? "true" : "false"} onChange={(event) => saveZone({ ...row, active: event.target.value === "true" })} options={[{ label: "Yes", value: "true" }, { label: "No", value: "false" }]} /> },
+        { key: "states", header: "States", render: (row) => row.states.length ? row.states.join(", ") : row.id === "ship-other" ? "Unassigned states" : "None yet" },
+        { key: "price", header: "Price", render: (row) => formatNaira(row.price) },
+        { key: "active", header: "Status", render: (row) => row.active ? "Active" : "Paused" },
+        { key: "actions", header: "Actions", render: (row) => <div className="flex flex-wrap items-center gap-3"><button type="button" className="font-semibold text-accent underline-offset-4 hover:underline" onClick={() => { setForm({ ...row, states: [...row.states] }); setSelectedState(""); setError(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Edit</button>{row.id !== "ship-other" ? <button type="button" aria-label={`Delete ${row.name} shipping zone`} className="inline-flex items-center gap-1 font-semibold text-clay underline-offset-4 hover:underline" onClick={() => deleteZone(row)}><Trash2 size={15} /> Delete</button> : <span className="text-xs text-muted">Required fallback</span>}</div> },
       ]} />
     </div>
   );

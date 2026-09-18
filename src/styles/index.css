@@ -4,8 +4,8 @@
 @tailwind utilities;
 
 :root {
-  color: #14110f;
-  background: #f7f3ed;
+  color: #0a0a0a;
+  background: #f4f4f4;
   font-family: "Manrope", system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,23 +14,23 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: #f7f3ed; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f4f4f4; }
 button, input, textarea, select { font: inherit; }
 img { max-width: 100%; display: block; }
 
-::selection { background: #173f35; color: #fff; }
+::selection { background: #d0002a; color: #fff; }
 
 .focus-ring {
   outline: none;
 }
 
 .focus-ring:focus-visible {
-  outline: 2px solid #173f35;
+  outline: 2px solid #d0002a;
   outline-offset: 2px;
 }
 
 .admin-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.admin-scrollbar::-webkit-scrollbar-thumb { background: #d8cdbf; border-radius: 999px; }
+.admin-scrollbar::-webkit-scrollbar-thumb { background: #c9c9c9; border-radius: 999px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

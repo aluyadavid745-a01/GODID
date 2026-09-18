@@ -27,7 +27,7 @@ export const AdminLogin = () => {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f6f7f8] px-4">
       <form className="w-full max-w-md border border-line bg-white p-8 shadow-soft" onSubmit={submit}>
-        <BrandLogo size="lg" />
+        <BrandLogo size="lg" variant="admin" />
         <h1 className="mt-8 font-display text-3xl font-semibold">Admin Login</h1>
         <p className="mt-2 text-sm text-muted">Sign in with a Firebase account that has the GODID admin claim.</p>
         <div className="mt-8 grid gap-4">

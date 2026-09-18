@@ -355,7 +355,7 @@ export const orders: Order[] = [
 
 export const homepageContent: HomepageContent = {
   heroHeadline: "God in Every Design.",
-  heroDescription: "GODID creates premium essentials and statement pieces from original patterns, refined fabrics, and controlled production runs for the modern Nigerian rhythm.",
+  heroDescription: "GODID creates premium essentials and statement pieces from original patterns, refined fabrics, and controlled production runs, with delivery nationwide.",
   heroImage: img("photo-1509631179647-0177331693ae", 1800, 1200),
   primaryCta: "Shop Collection",
   secondaryCta: "Explore",
@@ -363,7 +363,7 @@ export const homepageContent: HomepageContent = {
   featuredCollectionIds: ["col-summer-2026", "col-premium"],
   brandStory: "God in Every Design is our philosophy: every silhouette, fabric choice, stitch, and production decision should carry purpose before it reaches your wardrobe.",
   newsletterTitle: "Private drops, studio notes, and early access.",
-  newsletterText: "Join the GODID list for new arrivals, Lagos delivery windows, and limited production releases.",
+  newsletterText: "Join the GODID list for new arrivals, nationwide delivery updates, and limited production releases.",
   lookbookImages: [img("photo-1496747611176-843222e1e57c", 900, 1200), img("photo-1515886657613-9f3515b0c78f", 900, 1200), img("photo-1483985988355-763728e1935b", 900, 1200)],
 };
 

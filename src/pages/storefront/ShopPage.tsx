@@ -16,7 +16,7 @@ export const ShopPage = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [filters, setFilters] = useState<ProductFilters>({ sort: "newest" });
   const routeCategoryId = useMemo(() => categories.find((category) => category.slug === categorySlug)?.id, [categories, categorySlug]);
-  useMeta("Shop GODID | Premium Nigerian Clothing", "Shop GODID t-shirts, hoodies, shirts, trousers, jackets, dresses and accessories.");
+  useMeta("Shop GODID | Nationwide Delivery", "Shop GODID t-shirts, hoodies, shirts, trousers, jackets, dresses and accessories with delivery nationwide.");
 
   useEffect(() => {
     Promise.all([catalogApi.listCategories(), catalogApi.listCollections(), catalogApi.listProducts()]).then(([cats, cols, items]) => {
@@ -41,7 +41,7 @@ export const ShopPage = () => {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:py-12 lg:px-8">
       <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted">Premium Nigerian fashion</p>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted">GODID · Nationwide delivery</p>
           <h1 className="mt-3 font-display text-4xl font-semibold md:text-6xl">Shop</h1>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm text-muted md:justify-end">

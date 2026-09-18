@@ -4,13 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#14110f",
-        muted: "#6f6861",
-        bone: "#f7f3ed",
-        porcelain: "#fbfaf7",
-        line: "#e7ded2",
+        ink: "#0a0a0a",
+        muted: "#626262",
+        bone: "#f4f4f4",
+        porcelain: "#ffffff",
+        line: "#dedede",
+        accent: "#d0002a",
         palm: "#173f35",
-        clay: "#a65f3c"
+        clay: "#b00025"
       },
       fontFamily: {
         display: ["Sora", "Inter", "system-ui", "sans-serif"],
@@ -18,7 +19,7 @@ export default {
         mono: ["Space Mono", "ui-monospace", "monospace"]
       },
       boxShadow: {
-        soft: "0 20px 70px rgba(20, 17, 15, 0.08)"
+        soft: "0 20px 70px rgba(10, 10, 10, 0.08)"
       }
     },
   },

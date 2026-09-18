@@ -26,8 +26,8 @@ export const AccountLayout = () => {
         <Button variant="secondary" onClick={logout}>Logout</Button>
       </div>
       <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-        <nav className="h-fit border border-line bg-white p-4">
-          {["profile", "orders", "wishlist", "addresses"].map((item) => <Link key={item} to={`/account/${item === "profile" ? "" : item}`} className="block border-b border-line py-3 font-semibold capitalize last:border-0">{item}</Link>)}
+        <nav className="admin-scrollbar flex h-fit min-w-0 gap-2 overflow-x-auto border border-line bg-white p-2 lg:block lg:overflow-visible lg:p-4">
+          {["profile", "orders", "wishlist", "addresses"].map((item) => <Link key={item} to={`/account/${item === "profile" ? "" : item}`} className="shrink-0 border border-line px-3 py-2 text-sm font-semibold capitalize lg:block lg:border-x-0 lg:border-t-0 lg:px-0 lg:py-3 lg:last:border-0">{item}</Link>)}
         </nav>
         <Outlet />
       </div>

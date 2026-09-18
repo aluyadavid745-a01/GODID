@@ -32,6 +32,20 @@ const requireAdmin = async (request: any) => {
   return decoded;
 };
 
+const toDateKey = (date: Date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const listDocuments = async <T>(collection: string, limit = 250) => {
+  const snapshot = await db.collection(collection).limit(limit).get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as T[];
+};
+
 export const api = onRequest(async (request, response) => {
   cors(response);
   if (request.method === "OPTIONS") return response.status(204).send("");
@@ -55,16 +69,29 @@ export const api = onRequest(async (request, response) => {
           const item = body.items[index];
           const product = products[index].data();
           const variant = product?.variants?.find((entry: any) => entry.id === item.variantId);
-          if (!product || product.status !== "published" || !variant || variant.inventory < item.quantity) throw new Error("One or more items are unavailable.");
-          const unitPrice = product.salePrice ?? product.price;
+          if (product && (product.status !== "published" || !variant || variant.inventory < item.quantity)) throw new Error("One or more items are unavailable.");
+          const unitPrice = product ? product.salePrice ?? product.price : Number(item.unitPrice ?? 0);
+          if (!Number.isFinite(unitPrice) || unitPrice <= 0 || !item.productName || !item.sku || !item.color || !item.size) throw new Error("One or more order items are missing product details.");
           subtotal += unitPrice * item.quantity;
-          orderItems.push({ ...item, productName: product.name, image: product.images?.[0] ?? "", sku: variant.sku, color: variant.color, size: variant.size, unitPrice });
-          transaction.update(products[index].ref, { variants: product.variants.map((entry: any) => entry.id === variant.id ? { ...entry, inventory: entry.inventory - item.quantity } : entry) });
+          orderItems.push({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            productName: product?.name ?? item.productName,
+            image: product?.images?.[0] ?? item.image ?? "",
+            sku: variant?.sku ?? item.sku,
+            color: variant?.color ?? item.color,
+            size: variant?.size ?? item.size,
+            unitPrice,
+          });
+          if (product && variant) transaction.update(products[index].ref, { variants: product.variants.map((entry: any) => entry.id === variant.id ? { ...entry, inventory: entry.inventory - item.quantity } : entry) });
         }
         const shipping = Math.max(0, Number(body.shipping ?? 0));
         const discount = Math.min(subtotal, Math.max(0, Number(body.discount ?? 0)));
         const order = { id: orderRef.id, orderNumber, customerId: body.customerId ?? null, customerName: customer.name, customerEmail: String(customer.email).toLowerCase(), customerPhone: customer.phone, items: orderItems, address, status: "pending" as OrderStatus, paymentStatus: "pending" as PaymentStatus, paymentProvider: "whatsapp", deliveryMethod: `${address.state} delivery`, totals: { subtotal, discount, shipping, tax: 0, total: Math.max(0, subtotal - discount + shipping) }, createdAt: new Date().toISOString(), whatsappNumber: WHATSAPP_NUMBER };
         transaction.set(orderRef, order);
+        transaction.set(db.collection("notifications").doc(), { type: "whatsapp", recipient: customer.phone, subject: `Order ${orderNumber} awaiting WhatsApp completion`, message: `Customer should complete ${orderNumber} through WhatsApp.`, createdAt: new Date().toISOString(), read: false });
+        transaction.set(db.collection("notifications").doc(), { type: "system", recipient: "admin", subject: "New WhatsApp order received", message: `${customer.name} placed ${orderNumber} for ${order.totals.total}. Awaiting WhatsApp payment confirmation.`, createdAt: new Date().toISOString(), read: false });
         return order;
       });
       return json(response, 201, result);
@@ -84,6 +111,56 @@ export const api = onRequest(async (request, response) => {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(response, 400, { error: "A valid email address is required." });
       await db.collection("newsletterSubscribers").doc(email).set({ email, subscribedAt: new Date().toISOString(), source: "storefront" }, { merge: true });
       return json(response, 200, { ok: true });
+    }
+
+    if (request.path === "/admin/orders" && request.method === "GET") {
+      await requireAdmin(request);
+      const snapshot = await db.collection("orders").orderBy("createdAt", "desc").limit(250).get();
+      return json(response, 200, snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    }
+
+    if (request.path === "/admin/notifications" && request.method === "GET") {
+      await requireAdmin(request);
+      const snapshot = await db.collection("notifications").orderBy("createdAt", "desc").limit(100).get();
+      return json(response, 200, snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    }
+
+    if (request.path === "/admin/overview" && request.method === "GET") {
+      await requireAdmin(request);
+      const [orders, products, customers] = await Promise.all([
+        listDocuments<any>("orders", 500),
+        listDocuments<any>("products", 500),
+        listDocuments<any>("customers", 500),
+      ]);
+      const paidOrders = orders.filter((order) => order.paymentStatus === "paid");
+      const totalRevenue = paidOrders.reduce((sum, order) => sum + Number(order.totals?.total ?? 0), 0);
+      const todayKey = toDateKey(new Date());
+      const todayRevenue = paidOrders.filter((order) => String(order.createdAt ?? "").startsWith(todayKey)).reduce((sum, order) => sum + Number(order.totals?.total ?? 0), 0);
+      const pendingOrders = orders.filter((order) => ["pending", "confirmed", "processing"].includes(order.status)).length;
+      const lowStock = products.flatMap((product) => (product.variants ?? [])
+        .filter((variant: any) => Number(variant.inventory ?? 0) <= Number(variant.lowStockThreshold ?? 0))
+        .map((variant: any) => ({ product, variant })));
+      const chart = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - index));
+        const key = toDateKey(date);
+        const value = paidOrders.filter((order) => String(order.createdAt ?? "").startsWith(key)).reduce((sum, order) => sum + Number(order.totals?.total ?? 0), 0);
+        return { label: weekdays[date.getDay()], value };
+      });
+      return json(response, 200, {
+        totalRevenue,
+        todayRevenue,
+        averageOrderValue: paidOrders.length ? Math.round(totalRevenue / paidOrders.length) : 0,
+        totalOrders: orders.length,
+        pendingOrders,
+        totalCustomers: customers.length,
+        products: products.length,
+        lowStockProducts: lowStock.length,
+        chart,
+        recentOrders: orders.slice(0, 20),
+        topProducts: products.filter((product) => product.popular).slice(0, 4),
+        lowStock,
+      });
     }
 
     if (request.path.startsWith("/admin/orders/") && request.method === "POST") {

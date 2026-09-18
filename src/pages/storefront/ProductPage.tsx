@@ -90,11 +90,11 @@ export const ProductPage = () => {
           <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <Button disabled={!available} onClick={() => variant && addItem({ productId: product.id, variantId: variant.id, quantity })}>Add to Cart</Button>
             <Button disabled={!available} to="/checkout" variant="secondary" onClick={() => variant && addItem({ productId: product.id, variantId: variant.id, quantity })}>Buy Now</Button>
-            <Button variant="ghost" aria-label="Add to wishlist" onClick={toggleWishlist} className={wishlisted ? "bg-white text-clay" : ""}><Heart size={18} />{wishlisted ? "Saved" : ""}</Button>
+            <Button variant="ghost" aria-label="Add to wishlist" onClick={toggleWishlist} className={wishlisted ? "bg-white text-accent" : ""}><Heart size={18} />{wishlisted ? "Saved" : ""}</Button>
           </div>
           <div className="mt-6 grid gap-4 text-sm text-muted">
             <p className={available ? "text-palm" : "text-clay"}>{available ? `${variant?.inventory} units available` : "Selected variant is unavailable"}</p>
-            <p className="flex gap-2"><Truck size={18} /> Nigerian delivery calculated at checkout by state and shipping zone.</p>
+            <p className="flex gap-2"><Truck size={18} /> Nationwide delivery calculated at checkout by state and shipping zone.</p>
             <p>Returns accepted within 7 days for unworn garments with tags intact.</p>
           </div>
           <div className="mt-8 grid gap-5 border-t border-line pt-6">
