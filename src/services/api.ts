@@ -192,7 +192,10 @@ export const commerceApi = {
     const store = await fsGet();
     const subtotal = items.reduce((sum, item) => {
       const product = store.products.find((entry) => entry.id === item.productId);
-      return sum + (product ? (product.salePrice ?? product.price) * item.quantity : 0);
+      if (!product) return sum;
+      const base = product.salePrice ?? product.price;
+      const bulk = (product.bulkPricing ?? []).filter((t) => item.quantity >= t.minQty).sort((a, b) => b.minQty - a.minQty)[0];
+      return sum + (bulk ? bulk.price : base) * item.quantity;
     }, 0);
     const discount = discountCode ? await commerceApi.applyDiscount(discountCode, subtotal) : undefined;
     const discountValue = discount ? (discount.type === "percentage" ? Math.round(subtotal * (discount.value / 100)) : discount.value) : 0;

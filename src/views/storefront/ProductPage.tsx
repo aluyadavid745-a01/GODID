@@ -74,6 +74,15 @@ export const ProductPage = () => {
             {product.salePrice ? <span className="font-semibold text-clay">{formatNaira(product.salePrice)}</span> : null}
             <span className={product.salePrice ? "text-muted line-through" : "font-semibold"}>{formatNaira(product.price)}</span>
           </div>
+          {(product.bulkPricing ?? []).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[...(product.bulkPricing ?? [])].sort((a, b) => a.minQty - b.minQty).map((tier) => (
+                <span key={tier.minQty} className="border border-accent/40 bg-accent/5 px-2.5 py-1 text-xs font-semibold text-accent">
+                  {tier.label ? `${tier.label}: ` : ""}{tier.minQty}+ units — {formatNaira(tier.price)} each
+                </span>
+              ))}
+            </div>
+          )}
           <p className="mt-6 text-lg leading-relaxed text-muted">{product.description}</p>
           <div className="mt-8 grid gap-6 border-y border-line py-6">
             <div>

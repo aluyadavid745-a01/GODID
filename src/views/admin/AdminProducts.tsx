@@ -9,7 +9,7 @@ import { Select } from "../../components/ui/Select";
 import { adminApi } from "../../services/api";
 import { ImageUpload } from "../../components/ui/ImageUpload";
 import { uploadImage } from "../../services/firestoreStore";
-import type { Category, Collection, Product, ProductStatus, ProductVariant } from "../../types/domain";
+import type { BulkPriceTier, Category, Collection, Product, ProductStatus, ProductVariant } from "../../types/domain";
 import { formatNaira } from "../../utils/format";
 import { useMeta } from "../../hooks/useMeta";
 
@@ -63,6 +63,11 @@ export const AdminProducts = () => {
   const [newColorHex, setNewColorHex] = useState("#111111");
   const [newSize, setNewSize] = useState("");
 
+  // bulk pricing inputs
+  const [newTierQty, setNewTierQty] = useState("");
+  const [newTierPrice, setNewTierPrice] = useState("");
+  const [newTierLabel, setNewTierLabel] = useState("");
+
   useMeta("Product Management | GODID", "Create, edit, publish and manage GODID products.");
 
   const refresh = () => adminApi.products().then(setRows);
@@ -81,6 +86,9 @@ export const AdminProducts = () => {
     setNewColorName("");
     setNewColorHex("#111111");
     setNewSize("");
+    setNewTierQty("");
+    setNewTierPrice("");
+    setNewTierLabel("");
     setEditing(product);
   };
 
@@ -179,6 +187,42 @@ export const AdminProducts = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Price (₦)" type="number" value={editing.price || ""} required onChange={(e) => upd("price", Number(e.target.value))} />
               <Input label="Sale price (₦)" type="number" value={editing.salePrice ?? ""} onChange={(e) => upd("salePrice", e.target.value ? Number(e.target.value) : undefined)} />
+            </div>
+
+            {/* ── Bulk pricing ────────────────────────────────────────────── */}
+            <div className="grid gap-3 border border-line p-4">
+              <div>
+                <p className="text-sm font-semibold text-ink">Bulk pricing</p>
+                <p className="mt-0.5 text-xs text-muted">Set a lower price per unit when customers buy in larger quantities.</p>
+              </div>
+              {(editing.bulkPricing ?? []).length > 0 && (
+                <div className="grid gap-2">
+                  <div className="hidden grid-cols-[80px_1fr_1fr_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted sm:grid">
+                    <span>Min qty</span><span>Price / unit (₦)</span><span>Label</span><span />
+                  </div>
+                  {[...(editing.bulkPricing ?? [])].sort((a, b) => a.minQty - b.minQty).map((tier, i) => (
+                    <div key={i} className="grid grid-cols-[80px_1fr_1fr_32px] items-center gap-2 border-b border-line pb-2">
+                      <span className="text-sm font-semibold">{tier.minQty}+</span>
+                      <span className="text-sm">{tier.price.toLocaleString("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 })}</span>
+                      <span className="text-sm text-muted">{tier.label ?? "—"}</span>
+                      <button type="button" onClick={() => upd("bulkPricing", (editing.bulkPricing ?? []).filter((_, idx) => idx !== i))} className="grid place-items-center text-muted hover:text-red-700"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-[80px_1fr_1fr_auto] items-end gap-2">
+                <Input label="Min qty" type="number" min={2} value={newTierQty} onChange={(e) => setNewTierQty(e.target.value)} placeholder="6" />
+                <Input label="Price (₦)" type="number" min={0} value={newTierPrice} onChange={(e) => setNewTierPrice(e.target.value)} placeholder="4500" />
+                <Input label="Label (optional)" value={newTierLabel} onChange={(e) => setNewTierLabel(e.target.value)} placeholder="Wholesale" />
+                <Button type="button" className="self-end shrink-0" onClick={() => {
+                  const qty = parseInt(newTierQty);
+                  const price = Number(newTierPrice);
+                  if (!qty || qty < 2 || !price) return;
+                  const tier: BulkPriceTier = { minQty: qty, price, ...(newTierLabel.trim() ? { label: newTierLabel.trim() } : {}) };
+                  upd("bulkPricing", [...(editing.bulkPricing ?? []), tier]);
+                  setNewTierQty(""); setNewTierPrice(""); setNewTierLabel("");
+                }}><Plus size={14} /> Add</Button>
+              </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Select label="Category" value={editing.categoryId} onChange={(e) => upd("categoryId", e.target.value)} options={categories.map((c) => ({ label: c.name, value: c.id }))} />

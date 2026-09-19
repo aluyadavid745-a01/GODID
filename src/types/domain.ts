@@ -52,6 +52,12 @@ export interface ProductVariant {
   lowStockThreshold: number;
 }
 
+export interface BulkPriceTier {
+  minQty: number;
+  price: number;
+  label?: string;
+}
+
 export interface Product {
   id: ID;
   slug: string;
@@ -59,6 +65,7 @@ export interface Product {
   description: string;
   price: number;
   salePrice?: number;
+  bulkPricing?: BulkPriceTier[];
   categoryId: ID;
   collectionIds: ID[];
   images: string[];
