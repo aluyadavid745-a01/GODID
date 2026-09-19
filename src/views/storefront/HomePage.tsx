@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MessageGodSection } from "../../components/storefront/MessageGodSection";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -11,6 +12,7 @@ import { catalogApi, newsletterApi } from "../../services/api";
 import type { Category, Collection, HomepageContent, Product } from "../../types/domain";
 import { useMeta } from "../../hooks/useMeta";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
+import storefrontLogo from "../../assets/storefront-logo.jpeg";
 
 export const HomePage = () => {
   const pathname = usePathname();
@@ -60,7 +62,14 @@ export const HomePage = () => {
         <div className="mx-auto grid max-w-[1440px] lg:min-h-[690px] lg:grid-cols-[0.88fr_1.12fr]">
           <motion.div className="order-2 flex flex-col justify-center px-5 py-14 sm:px-10 sm:py-20 lg:order-1 lg:px-12 xl:px-20" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-muted"><span className="h-px w-8 bg-accent" />The GODID Studio</p>
-            <h1 className="mt-7 max-w-[680px] font-display text-[clamp(3.2rem,6vw,6.6rem)] font-semibold leading-[0.99] tracking-[-0.07em] text-ink">{content.heroHeadline}</h1>
+            <h1 className="mt-7 max-w-[680px]">
+              <span className="sr-only">{content.heroHeadline}</span>
+              <img
+                src={content.heroLogo || storefrontLogo.src}
+                alt=""
+                className="block h-auto w-full max-w-[520px] rounded-sm object-contain"
+              />
+            </h1>
             <p className="mt-7 max-w-xl text-base leading-relaxed text-muted sm:text-lg">{content.heroDescription}</p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button to="/shop" className="border-ink bg-ink px-7 text-white hover:border-accent hover:bg-accent">{content.primaryCta}<ArrowRight size={16} /></Button>
@@ -139,6 +148,8 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
+
+      <MessageGodSection />
 
       <section id="lookbook" className="mx-auto max-w-7xl scroll-mt-32 px-4 py-16 sm:py-24 lg:px-8">
         <div data-reveal className="mb-10 flex items-end justify-between gap-6">

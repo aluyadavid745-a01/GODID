@@ -85,7 +85,14 @@ export const AdminContent = () => {
       <div><h2 className="font-display text-3xl font-semibold">Homepage Content</h2><p className="text-muted">Control hero banner, featured products, promotional banners, lookbook, brand story and newsletter copy without code changes.</p></div>
       {notice ? <div className="border border-palm bg-white p-3 text-sm font-semibold text-palm">{notice}</div> : null}
       <section className="grid gap-5 border border-line bg-white p-5">
-        <Input label="Hero headline" value={content.heroHeadline} onChange={(event) => setContent({ ...content, heroHeadline: event.target.value })} />
+        <Input label="Hero headline (screen readers and SEO)" value={content.heroHeadline} onChange={(event) => setContent({ ...content, heroHeadline: event.target.value })} />
+        <ImageUpload
+          label="Hero logo"
+          value={content.heroLogo ?? ""}
+          uploadFn={(file) => uploadImage("homepage/logo", file)}
+          onChange={(url) => setContent({ ...content, heroLogo: url })}
+        />
+        <p className="-mt-3 text-xs text-muted">Upload a wide logo for the space below “The GODID Studio.” If empty, the built-in GODID logo is used.</p>
         <Input label="Hero description" value={content.heroDescription} onChange={(event) => setContent({ ...content, heroDescription: event.target.value })} />
         <ImageUpload
           label="Hero image"

@@ -357,6 +357,7 @@ export const homepageContent: HomepageContent = {
   heroHeadline: "God in Every Design.",
   heroDescription: "GODID creates premium essentials and statement pieces from original patterns, refined fabrics, and controlled production runs, with delivery nationwide.",
   heroImage: img("photo-1509631179647-0177331693ae", 1800, 1200),
+  heroLogo: "",
   primaryCta: "Shop Collection",
   secondaryCta: "Explore",
   featuredProductIds: ["prod-heavy-tshirt", "prod-studio-hoodie", "prod-tailored-jacket", "prod-leather-tote"],

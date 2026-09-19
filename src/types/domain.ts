@@ -153,6 +153,7 @@ export interface HomepageContent {
   heroHeadline: string;
   heroDescription: string;
   heroImage: string;
+  heroLogo?: string;
   primaryCta: string;
   secondaryCta: string;
   featuredProductIds: ID[];

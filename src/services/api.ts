@@ -1,5 +1,6 @@
-import { categories, collections, customers, discounts, homepageContent, orders, products, shippingZones, storeSettings } from "../data/mockData";
+import { customers, discounts, homepageContent, orders, shippingZones, storeSettings } from "../data/mockData";
 import { NIGERIAN_STATES } from "../data/nigeria";
+import { getSharedStore, updateSharedStore, sharedStoreEnabled, type SharedStoreState } from "./firestoreStore";
 import type { Address, CartItem, Category, Collection, ContentPage, Customer, Discount, HomepageContent, InventoryHistoryEntry, MoneySummary, NotificationRecord, Order, OrderStatus, PaymentStatus, Product, ProductStatus, ShippingZone, StoreSettings } from "../types/domain";
 
 const delay = <T,>(value: T, ms = 120) => new Promise<T>((resolve) => window.setTimeout(() => resolve(value), ms));
@@ -43,9 +44,9 @@ const contentPages: ContentPage[] = [
 ];
 
 const initialState: StoreState = {
-  products,
-  categories,
-  collections,
+  products: [],
+  categories: [],
+  collections: [],
   customers,
   orders,
   discounts,
@@ -55,6 +56,32 @@ const initialState: StoreState = {
   notifications: [],
   inventoryHistory: [],
   storeSettings,
+};
+
+// Subset of initialState compatible with SharedStoreState (for Firestore fallback)
+const sharedInitial: SharedStoreState = {
+  products: [],
+  categories: [],
+  collections: [],
+  discounts,
+  shippingZones,
+  homepageContent,
+  contentPages,
+  inventoryHistory: [],
+  storeSettings,
+};
+
+// Firestore-aware read
+const fsGet = (): Promise<StoreState> => {
+  if (!sharedStoreEnabled) return Promise.resolve(loadStore());
+  const local = loadStore();
+  return getSharedStore(sharedInitial).then((shared) => ({ ...local, ...shared }));
+};
+
+// Firestore-aware write
+const fsUpdate = <T>(updater: (state: StoreState) => T): Promise<T> => {
+  if (!sharedStoreEnabled) return Promise.resolve(updateStore(updater));
+  return updateSharedStore(sharedInitial, (shared) => updater(shared as unknown as StoreState));
 };
 
 const clone = <T,>(value: T): T => {
@@ -111,8 +138,8 @@ export interface ProductFilters {
 }
 
 export const catalogApi = {
-  listProducts: (filters: ProductFilters = {}) => {
-    const store = loadStore();
+  listProducts: async (filters: ProductFilters = {}) => {
+    const store = await fsGet();
     let list = store.products.filter((product) => product.status === "published");
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -124,23 +151,22 @@ export const catalogApi = {
     if (filters.color) list = list.filter((product) => product.colors.some((color) => color.name === filters.color));
     if (filters.minPrice) list = list.filter((product) => (product.salePrice ?? product.price) >= filters.minPrice!);
     if (filters.maxPrice) list = list.filter((product) => (product.salePrice ?? product.price) <= filters.maxPrice!);
-    list = [...list].sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (filters.sort === "price-asc") return (a.salePrice ?? a.price) - (b.salePrice ?? b.price);
       if (filters.sort === "price-desc") return (b.salePrice ?? b.price) - (a.salePrice ?? a.price);
       if (filters.sort === "popular") return Number(b.popular) - Number(a.popular);
       if (filters.sort === "featured") return Number(b.featured) - Number(a.featured);
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-    return delay(list);
   },
-  getProductBySlug: (slug: string) => delay(loadStore().products.find((product) => product.slug === slug)),
-  getProductById: (id: string) => delay(loadStore().products.find((product) => product.id === id)),
-  listCategories: () => delay(loadStore().categories.filter((category) => category.published)),
-  listCollections: () => delay(loadStore().collections.filter((collection) => collection.published)),
-  getCollectionBySlug: (slug: string) => delay(loadStore().collections.find((collection) => collection.slug === slug)),
-  getHomepage: () => delay(loadStore().homepageContent),
-  listContentPages: () => delay(loadStore().contentPages),
-  getContentPage: (slug: string) => delay(loadStore().contentPages.find((page) => page.slug === slug)),
+  getProductBySlug: async (slug: string) => (await fsGet()).products.find((p) => p.slug === slug),
+  getProductById: async (id: string) => (await fsGet()).products.find((p) => p.id === id),
+  listCategories: async () => (await fsGet()).categories.filter((c) => c.published),
+  listCollections: async () => (await fsGet()).collections.filter((c) => c.published),
+  getCollectionBySlug: async (slug: string) => (await fsGet()).collections.find((c) => c.slug === slug),
+  getHomepage: async () => (await fsGet()).homepageContent,
+  listContentPages: async () => (await fsGet()).contentPages,
+  getContentPage: async (slug: string) => (await fsGet()).contentPages.find((p) => p.slug === slug),
 };
 
 export const commerceApi = {
@@ -240,11 +266,8 @@ export const commerceApi = {
 };
 
 export const adminApi = {
-  overview: () => {
-    if (apiConfigured && !demoMode) return requestApi<{
-      totalRevenue: number; todayRevenue: number; averageOrderValue: number; totalOrders: number; pendingOrders: number; totalCustomers: number; products: number; lowStockProducts: number; chart: Array<{ label: string; value: number }>; recentOrders: Order[]; topProducts: Product[]; lowStock: Array<{ product: Product; variant: Product["variants"][number] }>;
-    }>("/admin/overview");
-    const store = loadStore();
+  overview: async () => {
+    const store = await fsGet();
     const totalRevenue = store.orders.reduce((sum, order) => sum + order.totals.total, 0);
     const pendingOrders = store.orders.filter((order) => ["pending", "confirmed", "processing"].includes(order.status)).length;
     const lowStock = store.products.flatMap((product) => product.variants.filter((variant) => variant.inventory <= variant.lowStockThreshold).map((variant) => ({ product, variant })));
@@ -293,9 +316,9 @@ export const adminApi = {
       lowStock,
     });
   },
-  products: () => delay(loadStore().products),
-  categories: () => delay(loadStore().categories),
-  collections: () => delay(loadStore().collections),
+  products: async () => (await fsGet()).products,
+  categories: async () => (await fsGet()).categories,
+  collections: async () => (await fsGet()).collections,
   customers: () => delay(loadStore().customers),
   orders: () => apiConfigured && !demoMode ? requestApi<Order[]>("/admin/orders") : delay(loadStore().orders),
   orderByNumber: (orderNumber: string, email?: string) => {
@@ -305,32 +328,32 @@ export const adminApi = {
     const order = loadStore().orders.find((item) => item.orderNumber.toUpperCase() === normalized && (!normalizedEmail || item.customerEmail.toLowerCase() === normalizedEmail));
     return delay(order);
   },
-  notifications: () => apiConfigured && !demoMode ? requestApi<NotificationRecord[]>("/admin/notifications") : delay(loadStore().notifications),
-  inventoryHistory: () => delay(loadStore().inventoryHistory),
-  discounts: () => delay(loadStore().discounts),
-  shippingZones: () => delay(loadStore().shippingZones),
-  homepage: () => delay(loadStore().homepageContent),
-  contentPages: () => delay(loadStore().contentPages),
-  settings: () => delay(loadStore().storeSettings),
+  notifications: () => delay(loadStore().notifications),
+  inventoryHistory: async () => (await fsGet()).inventoryHistory,
+  discounts: async () => (await fsGet()).discounts,
+  shippingZones: async () => (await fsGet()).shippingZones,
+  homepage: async () => (await fsGet()).homepageContent,
+  contentPages: async () => (await fsGet()).contentPages,
+  settings: async () => (await fsGet()).storeSettings,
   resetDemoStore: () => delay(saveStore(clone(initialState))),
-  saveProduct: (payload: Product) => delay(updateStore((state) => {
+  saveProduct: (payload: Product) => fsUpdate((state) => {
     const product = { ...payload, slug: payload.slug || slugify(payload.name), createdAt: payload.createdAt || new Date().toISOString() };
     const index = state.products.findIndex((item) => item.id === product.id);
     if (index >= 0) state.products[index] = product;
     else state.products.unshift(product);
     return product;
-  })),
-  deleteProduct: (productId: string) => delay(updateStore((state) => {
+  }),
+  deleteProduct: (productId: string) => fsUpdate((state) => {
     state.products = state.products.filter((item) => item.id !== productId);
     state.collections = state.collections.map((collection) => ({ ...collection, productIds: collection.productIds.filter((id) => id !== productId) }));
     return productId;
-  })),
-  updateProductStatus: (productId: string, status: ProductStatus) => delay(updateStore((state) => {
+  }),
+  updateProductStatus: (productId: string, status: ProductStatus) => fsUpdate((state) => {
     const product = state.products.find((item) => item.id === productId);
     if (product) product.status = status;
     return product;
-  })),
-  updateVariantInventory: (variantId: string, inventory: number, lowStockThreshold?: number) => delay(updateStore((state) => {
+  }),
+  updateVariantInventory: (variantId: string, inventory: number, lowStockThreshold?: number) => fsUpdate((state) => {
     for (const product of state.products) {
       const variant = product.variants.find((item) => item.id === variantId);
       if (variant) {
@@ -366,40 +389,40 @@ export const adminApi = {
     if (customer) customer.status = status;
     return customer;
   })),
-  saveCollection: (payload: Collection) => delay(updateStore((state) => {
+  saveCollection: (payload: Collection) => fsUpdate((state) => {
     const collection = { ...payload, slug: payload.slug || slugify(payload.name) };
     const index = state.collections.findIndex((item) => item.id === collection.id);
     if (index >= 0) state.collections[index] = collection;
     else state.collections.unshift(collection);
     return collection;
-  })),
-  deleteCollection: (id: string) => delay(updateStore((state) => {
+  }),
+  deleteCollection: (id: string) => fsUpdate((state) => {
     state.collections = state.collections.filter((item) => item.id !== id);
     return id;
-  })),
-  saveCategory: (payload: Category) => delay(updateStore((state) => {
+  }),
+  saveCategory: (payload: Category) => fsUpdate((state) => {
     const category = { ...payload, slug: payload.slug || slugify(payload.name) };
     const index = state.categories.findIndex((item) => item.id === category.id);
     if (index >= 0) state.categories[index] = category;
     else state.categories.unshift(category);
     return category;
-  })),
-  deleteCategory: (id: string) => delay(updateStore((state) => {
+  }),
+  deleteCategory: (id: string) => fsUpdate((state) => {
     state.categories = state.categories.filter((item) => item.id !== id);
     return id;
-  })),
-  saveDiscount: (payload: Discount) => delay(updateStore((state) => {
+  }),
+  saveDiscount: (payload: Discount) => fsUpdate((state) => {
     const discount = { ...payload, code: payload.code.toUpperCase() };
     const index = state.discounts.findIndex((item) => item.id === discount.id);
     if (index >= 0) state.discounts[index] = discount;
     else state.discounts.unshift(discount);
     return discount;
-  })),
-  deleteDiscount: (id: string) => delay(updateStore((state) => {
+  }),
+  deleteDiscount: (id: string) => fsUpdate((state) => {
     state.discounts = state.discounts.filter((item) => item.id !== id);
     return id;
-  })),
-  saveShippingZone: (payload: ShippingZone) => delay(updateStore((state) => {
+  }),
+  saveShippingZone: (payload: ShippingZone) => fsUpdate((state) => {
     const name = payload.name.trim();
     const states = [...new Set(payload.states)];
     if (!name) throw new Error("Enter a shipping zone name.");
@@ -407,32 +430,32 @@ export const adminApi = {
     if (payload.id !== "ship-other" && !states.length) throw new Error("Add at least one state to this zone.");
     if (states.some((item) => !NIGERIAN_STATES.includes(item))) throw new Error("Choose states from the Nigerian state list.");
     const zone = { ...payload, name, states, active: payload.id === "ship-other" ? true : payload.active };
-    state.shippingZones = state.shippingZones.map((item) => item.id === zone.id ? zone : { ...item, states: item.states.filter((state) => !states.includes(state)) });
+    state.shippingZones = state.shippingZones.map((item) => item.id === zone.id ? zone : { ...item, states: item.states.filter((s) => !states.includes(s)) });
     if (!state.shippingZones.some((item) => item.id === zone.id)) state.shippingZones.unshift(zone);
     return zone;
-  })),
-  deleteShippingZone: (id: string) => delay(updateStore((state) => {
+  }),
+  deleteShippingZone: (id: string) => fsUpdate((state) => {
     if (id === "ship-other") throw new Error("The Other States fallback zone cannot be deleted.");
     const zone = state.shippingZones.find((item) => item.id === id);
     if (!zone) throw new Error("Shipping zone not found.");
     state.shippingZones = state.shippingZones.filter((item) => item.id !== id);
     return zone;
-  })),
-  updateHomepage: (payload: HomepageContent) => delay(updateStore((state) => {
+  }),
+  updateHomepage: (payload: HomepageContent) => fsUpdate((state) => {
     state.homepageContent = payload;
     return state.homepageContent;
-  })),
-  updateContentPage: (payload: ContentPage) => delay(updateStore((state) => {
+  }),
+  updateContentPage: (payload: ContentPage) => fsUpdate((state) => {
     const page = { ...payload, slug: payload.slug || slugify(payload.title) };
     const index = state.contentPages.findIndex((item) => item.slug === page.slug);
     if (index >= 0) state.contentPages[index] = page;
     else state.contentPages.push(page);
     return page;
-  })),
-  updateSettings: (payload: StoreSettings) => delay(updateStore((state) => {
+  }),
+  updateSettings: (payload: StoreSettings) => fsUpdate((state) => {
     state.storeSettings = payload;
     return state.storeSettings;
-  })),
+  }),
 };
 
 export const newsletterApi = {
@@ -454,12 +477,12 @@ export const inventoryService = {
     const variant = product.variants.find((item) => item.id === variantId);
     return Boolean(variant && variant.inventory >= quantity);
   },
-  decreaseInventory: (items: CartItem[]) => delay(updateStore((state) => {
+  decreaseInventory: (items: CartItem[]) => fsUpdate((state) => {
     items.forEach((item) => {
       const product = state.products.find((entry) => entry.id === item.productId);
       const variant = product?.variants.find((entry) => entry.id === item.variantId);
       if (variant) variant.inventory = Math.max(0, variant.inventory - item.quantity);
     });
     return items.map((item) => ({ ...item, committed: true }));
-  })),
+  }),
 };
