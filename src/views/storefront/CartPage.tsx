@@ -20,7 +20,10 @@ export const CartPage = () => {
   useEffect(() => { catalogApi.listProducts().then(setProducts); }, []);
   const subtotal = items.reduce((sum, item) => {
     const product = products.find((entry) => entry.id === item.productId);
-    return sum + (product ? (product.salePrice ?? product.price) * item.quantity : 0);
+    if (!product) return sum;
+    const base = product.salePrice ?? product.price;
+    const bulk = (product.bulkPricing ?? []).filter((t) => item.quantity >= t.minQty).sort((a, b) => b.minQty - a.minQty)[0];
+    return sum + (bulk ? bulk.price : base) * item.quantity;
   }, 0);
   const discountValue = discount ? (discount.type === "percentage" ? Math.round(subtotal * (discount.value / 100)) : discount.value) : 0;
   const applyPromo = async () => {
@@ -51,7 +54,7 @@ export const CartPage = () => {
                     <span className="min-w-8 px-2 py-1 text-center">{item.quantity}</span>
                     <button className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}>+</button>
                   </div>
-                  <p className="font-semibold sm:mt-4">{formatNaira((product.salePrice ?? product.price) * item.quantity)}</p>
+                  <p className="font-semibold sm:mt-4">{(() => { const base = product.salePrice ?? product.price; const bulk = (product.bulkPricing ?? []).filter((t) => item.quantity >= t.minQty).sort((a, b) => b.minQty - a.minQty)[0]; return formatNaira((bulk ? bulk.price : base) * item.quantity); })()}</p>
                 </div>
               </article>
             );

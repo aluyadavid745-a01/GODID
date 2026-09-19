@@ -10,7 +10,6 @@ import { Button } from "../ui/Button";
 
 const links = [
   { label: "Shop", to: "/shop" },
-  { label: "Collections", to: "/collections/summer-2026" },
   { label: "Lookbook", to: "/#lookbook" },
   { label: "Story", to: "/#story" },
 ];

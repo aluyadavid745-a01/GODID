@@ -50,7 +50,7 @@ export const OrderConfirmationPage = () => {
       <div className="mt-10 rounded-lg border border-line bg-white p-6 text-left shadow-soft">
         <div className="grid gap-4 sm:grid-cols-2">
           <Summary label="Order Number" value={loading ? "Loading..." : order?.orderNumber ?? "Order unavailable"} />
-          <Summary label="Total" value={formatNaira(order?.totals.total ?? 48000)} />
+          <Summary label="Total" value={order ? formatNaira(order.totals.total) : "—"} />
           <Summary label="Payment" value={order ? titleCase(order.paymentStatus) : "Pending"} />
           <Summary label="Delivery" value={order?.address.state ?? "Lagos"} />
         </div>

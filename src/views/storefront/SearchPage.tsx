@@ -9,12 +9,18 @@ import { useMeta } from "../../hooks/useMeta";
 
 export const SearchPage = () => {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   useMeta("Search | GODID", "Search GODID products, collections, and garments.");
 
   useEffect(() => {
-    catalogApi.listProducts({ search: query, sort: "newest" }).then(setResults);
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    catalogApi.listProducts({ search: debouncedQuery, sort: "newest" }).then(setResults);
+  }, [debouncedQuery]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-12 lg:px-8">

@@ -10,15 +10,19 @@ export const CollectionPage = () => {
   const params = useParams();
   const slug = params?.slug as string | undefined;
   const [collection, setCollection] = useState<Collection | null>(null);
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
     if (!slug) return;
+    setLoading(true);
     catalogApi.getCollectionBySlug(slug).then((item) => {
+      setLoading(false);
       setCollection(item ?? null);
       if (item) catalogApi.listProducts({ collection: item.id }).then(setProducts);
     });
   }, [slug]);
   useMeta(collection ? `${collection.name} | GODID` : "Collection | GODID", collection?.description ?? "Shop GODID fashion collections.");
+  if (loading) return <main className="min-h-screen px-4 py-20"><div className="h-8 w-48 animate-pulse rounded bg-line" /></main>;
   if (!collection) return <main className="min-h-screen px-4 py-20">Collection not found.</main>;
   return (
     <main>
