@@ -1,3 +1,3 @@
 'use client'
-import { HomePage } from '@/pages/storefront/HomePage'
+import { HomePage } from '@/views/storefront/HomePage'
 export default function Page() { return <HomePage /> }

@@ -1,3 +1,3 @@
 'use client'
-import { ProductPage } from '@/pages/storefront/ProductPage'
+import { ProductPage } from '@/views/storefront/ProductPage'
 export default function Page() { return <ProductPage /> }

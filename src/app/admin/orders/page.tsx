@@ -1,3 +1,3 @@
 'use client'
-import { AdminOrders } from '@/pages/admin/AdminOrders'
+import { AdminOrders } from '@/views/admin/AdminOrders'
 export default function Page() { return <AdminOrders /> }

@@ -1,3 +1,3 @@
 'use client'
-import { OrderConfirmationPage } from '@/pages/storefront/OrderConfirmationPage'
+import { OrderConfirmationPage } from '@/views/storefront/OrderConfirmationPage'
 export default function Page() { return <OrderConfirmationPage /> }

@@ -1,3 +1,3 @@
 'use client'
-import { AdminShipping } from '@/pages/admin/AdminDiscountsContentSettings'
+import { AdminShipping } from '@/views/admin/AdminDiscountsContentSettings'
 export default function Page() { return <AdminShipping /> }

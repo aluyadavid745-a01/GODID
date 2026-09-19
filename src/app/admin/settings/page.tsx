@@ -1,3 +1,3 @@
 'use client'
-import { AdminSettings } from '@/pages/admin/AdminDiscountsContentSettings'
+import { AdminSettings } from '@/views/admin/AdminDiscountsContentSettings'
 export default function Page() { return <AdminSettings /> }

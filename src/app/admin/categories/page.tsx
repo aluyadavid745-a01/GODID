@@ -1,3 +1,3 @@
 'use client'
-import { AdminCategories } from '@/pages/admin/AdminCollectionsCategories'
+import { AdminCategories } from '@/views/admin/AdminCollectionsCategories'
 export default function Page() { return <AdminCategories /> }

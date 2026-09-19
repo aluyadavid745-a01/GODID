@@ -1,3 +1,3 @@
 'use client'
-import { RegisterPage } from '@/pages/storefront/AuthPages'
+import { RegisterPage } from '@/views/storefront/AuthPages'
 export default function Page() { return <RegisterPage /> }

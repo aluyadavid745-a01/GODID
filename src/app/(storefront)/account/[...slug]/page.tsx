@@ -1,6 +1,6 @@
 'use client'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { AccountLayout, AccountOrders, WishlistPage, AddressesPage, AccountDashboard } from '@/pages/storefront/AccountPage'
+import { AccountLayout, AccountOrders, WishlistPage, AddressesPage, AccountDashboard } from '@/views/storefront/AccountPage'
 import { useParams } from 'next/navigation'
 
 function AccountContent() {

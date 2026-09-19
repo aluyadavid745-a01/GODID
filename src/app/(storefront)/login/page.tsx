@@ -1,3 +1,3 @@
 'use client'
-import { LoginPage } from '@/pages/storefront/AuthPages'
+import { LoginPage } from '@/views/storefront/AuthPages'
 export default function Page() { return <LoginPage /> }

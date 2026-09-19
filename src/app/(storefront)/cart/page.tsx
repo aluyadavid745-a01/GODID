@@ -1,3 +1,3 @@
 'use client'
-import { CartPage } from '@/pages/storefront/CartPage'
+import { CartPage } from '@/views/storefront/CartPage'
 export default function Page() { return <CartPage /> }

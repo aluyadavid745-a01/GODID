@@ -1,3 +1,3 @@
 'use client'
-import { StaticPage } from '@/pages/storefront/StaticPage'
+import { StaticPage } from '@/views/storefront/StaticPage'
 export default function Page() { return <StaticPage /> }
