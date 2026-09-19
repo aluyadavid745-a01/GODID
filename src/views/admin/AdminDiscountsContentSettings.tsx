@@ -282,6 +282,35 @@ export const AdminSettings = () => {
           <Button type="button" variant="secondary" className="w-fit" onClick={reset}>Reset demo data</Button>
         </div>
       </section>
+      <section className="grid gap-4 border border-line bg-white p-5">
+        <div>
+          <h3 className="font-display text-2xl font-semibold">Navbar logo</h3>
+          <p className="mt-1 text-sm text-muted">Replaces the default logo image in the top navigation bar across all storefront pages.</p>
+        </div>
+        <div className="max-w-sm">
+          <ImageUpload
+            label="Navbar logo image"
+            value={settings.navLogo ?? ""}
+            uploadFn={(file) => uploadImage("branding/nav-logo", file)}
+            onChange={(url) => setSettings({ ...settings, navLogo: url })}
+          />
+        </div>
+        {settings.navLogo && (
+          <div className="flex items-center gap-4">
+            <div className="border border-line bg-white p-3">
+              <img src={settings.navLogo} alt="Navbar logo preview" className="h-12 w-40 object-cover object-center rounded-sm" />
+            </div>
+            <button
+              type="button"
+              className="text-sm text-red-700 underline-offset-4 hover:underline"
+              onClick={() => setSettings({ ...settings, navLogo: "" })}
+            >
+              Remove logo
+            </button>
+          </div>
+        )}
+        <Button className="w-fit" onClick={save}><Save size={16} /> Save navbar logo</Button>
+      </section>
     </div>
   );
 };

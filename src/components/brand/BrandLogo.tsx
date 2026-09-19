@@ -17,7 +17,7 @@ const storefrontSizes: Record<BrandLogoSize, string> = {
   lg: "h-20 w-56",
 };
 
-export const BrandLogo = ({ to, size = "md", variant = "storefront" }: { to?: string; size?: BrandLogoSize; variant?: "admin" | "storefront" }) => {
+export const BrandLogo = ({ to, size = "md", variant = "storefront", navLogoUrl }: { to?: string; size?: BrandLogoSize; variant?: "admin" | "storefront"; navLogoUrl?: string }) => {
   const isAdmin = variant === "admin";
   const content = isAdmin ? (
     <span className="inline-flex items-center gap-2.5">
@@ -25,7 +25,7 @@ export const BrandLogo = ({ to, size = "md", variant = "storefront" }: { to?: st
       <span className="max-w-32 font-display text-xs font-bold uppercase leading-tight tracking-[0.08em] text-ink sm:text-sm">God in Every Design</span>
     </span>
   ) : (
-    <img src={storefrontLogo.src ?? storefrontLogo} alt="GODID — God in Every Design" className={`${storefrontSizes[size]} block shrink-0 rounded-sm object-cover object-center`} />
+    <img src={navLogoUrl || (storefrontLogo.src ?? storefrontLogo)} alt="GODID — God in Every Design" className={`${storefrontSizes[size]} block shrink-0 rounded-sm object-cover object-center`} />
   );
 
   if (to) return <Link href={to} aria-label="GODID home" className="focus-ring inline-flex">{content}</Link>;

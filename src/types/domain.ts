@@ -207,4 +207,5 @@ export interface StoreSettings {
   paymentProviders: Array<"whatsapp">;
   social: Record<string, string>;
   emailFrom: string;
+  navLogo?: string;
 }

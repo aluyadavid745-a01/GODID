@@ -1,5 +1,6 @@
 import { customers, discounts, homepageContent, orders, shippingZones, storeSettings } from "../data/mockData";
 import { NIGERIAN_STATES } from "../data/nigeria";
+import { firestoreOrdersEnabled, findFirestoreOrder, listFirestoreOrders, saveFirestoreOrder, updateFirestoreOrder } from "./firestoreOrders";
 import { getSharedStore, updateSharedStore, sharedStoreEnabled, type SharedStoreState } from "./firestoreStore";
 import type { Address, CartItem, Category, Collection, ContentPage, Customer, Discount, HomepageContent, InventoryHistoryEntry, MoneySummary, NotificationRecord, Order, OrderStatus, PaymentStatus, Product, ProductStatus, ShippingZone, StoreSettings } from "../types/domain";
 
@@ -170,21 +171,21 @@ export const catalogApi = {
 };
 
 export const commerceApi = {
-  getShippingZones: () => delay(loadStore().shippingZones),
-  calculateShipping: (state: string) => {
-    const zones = loadStore().shippingZones;
+  getShippingZones: async () => (await fsGet()).shippingZones,
+  calculateShipping: async (state: string) => {
+    const zones = (await fsGet()).shippingZones;
     const zone = zones.find((item) => item.active && item.states.includes(state)) ?? zones.find((item) => item.id === "ship-other")!;
-    return delay(zone.price);
+    return zone.price;
   },
-  applyDiscount: (code: string, subtotal: number) => {
-    const discount = loadStore().discounts.find((item) => item.code.toUpperCase() === code.toUpperCase() && item.active);
+  applyDiscount: async (code: string, subtotal: number) => {
+    const discount = (await fsGet()).discounts.find((item) => item.code.toUpperCase() === code.toUpperCase() && item.active);
     if (!discount || new Date(discount.expiresAt) < new Date() || subtotal < discount.minimumOrderValue || discount.used >= discount.usageLimit) {
-      return delay<Discount | undefined>(undefined);
+      return undefined as Discount | undefined;
     }
-    return delay(discount);
+    return discount;
   },
   calculateTotals: async (items: CartItem[], discountCode?: string, state?: string): Promise<MoneySummary> => {
-    const store = loadStore();
+    const store = await fsGet();
     const subtotal = items.reduce((sum, item) => {
       const product = store.products.find((entry) => entry.id === item.productId);
       return sum + (product ? (product.salePrice ?? product.price) * item.quantity : 0);
@@ -195,38 +196,22 @@ export const commerceApi = {
     return { subtotal, discount: discountValue, shipping, tax: 0, total: Math.max(0, subtotal - discountValue + shipping) };
   },
   createOrder: async (payload: { customer: { name: string; email: string; phone: string }; address: Address; items: CartItem[]; discountCode?: string }) => {
-    if (API_BASE_URL && !demoMode) {
-      const totals = await commerceApi.calculateTotals(payload.items, payload.discountCode, payload.address.state);
-      const store = loadStore();
-      const items = payload.items.map((item) => {
-        const product = store.products.find((entry) => entry.id === item.productId);
-        const variant = product?.variants.find((entry) => entry.id === item.variantId);
-        return {
-          ...item,
-          productName: product?.name,
-          image: product?.images[0],
-          sku: variant?.sku,
-          color: variant?.color,
-          size: variant?.size,
-          unitPrice: product ? product.salePrice ?? product.price : undefined,
-        };
-      });
-      return requestApi<Order>("/orders", { method: "POST", body: JSON.stringify({ ...payload, items, totals, shipping: totals.shipping, discount: totals.discount }) });
-    }
-    if (!demoMode && !API_BASE_URL) throw new Error("Checkout is not configured for launch. Set NEXT_PUBLIC_API_BASE_URL to the deployed GODID API.");
     const totals = await commerceApi.calculateTotals(payload.items, payload.discountCode, payload.address.state);
-    const store = loadStore();
+    const store = await fsGet();
+
     for (const item of payload.items) {
       const product = store.products.find((entry) => entry.id === item.productId);
       const variant = product?.variants.find((entry) => entry.id === item.variantId);
       if (!product || !variant || variant.inventory < item.quantity) throw new Error(`${product?.name ?? "Selected item"} is no longer available in that quantity.`);
     }
+
     const orderItems = payload.items.map((item) => {
       const product = store.products.find((entry) => entry.id === item.productId)!;
       const variant = product.variants.find((entry) => entry.id === item.variantId)!;
       return { ...item, productName: product.name, image: product.images[0], sku: variant.sku, color: variant.color, size: variant.size, unitPrice: product.salePrice ?? product.price };
     });
-    const order: Order = {
+
+    const orderDraft: Order = {
       id: `ord-${Date.now()}`,
       orderNumber: `#COL-${Math.floor(10000 + Math.random() * 89999)}`,
       customerId: "cust-session",
@@ -242,6 +227,31 @@ export const commerceApi = {
       totals,
       createdAt: new Date().toISOString(),
     };
+
+    if (firestoreOrdersEnabled) {
+      const order = await saveFirestoreOrder(orderDraft);
+      await fsUpdate((state) => {
+        payload.items.forEach((item) => {
+          const product = state.products.find((entry) => entry.id === item.productId);
+          const variant = product?.variants.find((entry) => entry.id === item.variantId);
+          if (product && variant) {
+            const previousStock = variant.inventory;
+            variant.inventory = Math.max(0, variant.inventory - item.quantity);
+            state.inventoryHistory.unshift({ id: `hist-${Date.now()}-${variant.id}`, productId: product.id, variantId: variant.id, sku: variant.sku, previousStock, nextStock: variant.inventory, reason: `Order ${order.orderNumber}`, createdAt: new Date().toISOString() });
+          }
+        });
+        if (payload.discountCode) {
+          const discount = state.discounts.find((d) => d.code.toUpperCase() === payload.discountCode!.toUpperCase());
+          if (discount) discount.used += 1;
+        }
+        return order;
+      });
+      return order;
+    }
+
+    if (!demoMode) throw new Error("Checkout is not configured. Set NEXT_PUBLIC_ORDER_BACKEND=firestore and configure Firebase, or set NEXT_PUBLIC_DEMO_MODE=true for local testing.");
+
+    const order = orderDraft;
     updateStore((state) => {
       state.orders.unshift(order);
       payload.items.forEach((item) => {
@@ -268,67 +278,43 @@ export const commerceApi = {
 export const adminApi = {
   overview: async () => {
     const store = await fsGet();
-    const totalRevenue = store.orders.reduce((sum, order) => sum + order.totals.total, 0);
-    const pendingOrders = store.orders.filter((order) => ["pending", "confirmed", "processing"].includes(order.status)).length;
+    const allOrders = firestoreOrdersEnabled ? await listFirestoreOrders() : store.orders;
+    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totals.total, 0);
+    const pendingOrders = allOrders.filter((order) => ["pending", "confirmed", "processing"].includes(order.status)).length;
     const lowStock = store.products.flatMap((product) => product.variants.filter((variant) => variant.inventory <= variant.lowStockThreshold).map((variant) => ({ product, variant })));
-
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      return d;
-    });
-
+    const last7Days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-    const toYmd = (date: Date) => {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, "0");
-      const dd = String(date.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
-    const chart = last7Days.map((d) => {
-      const ymd = toYmd(d);
-      const dayOrders = store.orders.filter((order) => order.createdAt.startsWith(ymd));
-      const value = dayOrders.reduce((sum, order) => sum + order.totals.total, 0);
-      return {
-        label: weekdays[d.getDay()],
-        value,
-      };
-    });
-
+    const toYmd = (date: Date) => { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, "0"); const dd = String(date.getDate()).padStart(2, "0"); return `${yyyy}-${mm}-${dd}`; };
+    const chart = last7Days.map((d) => { const ymd = toYmd(d); return { label: weekdays[d.getDay()], value: allOrders.filter((o) => o.createdAt.startsWith(ymd)).reduce((sum, o) => sum + o.totals.total, 0) }; });
     const todayYmd = toYmd(new Date());
-    const todayOrders = store.orders.filter((order) => order.createdAt.startsWith(todayYmd));
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totals.total, 0);
-
-    return delay({
+    const todayRevenue = allOrders.filter((o) => o.createdAt.startsWith(todayYmd)).reduce((sum, o) => sum + o.totals.total, 0);
+    return {
       totalRevenue,
       todayRevenue,
-      averageOrderValue: store.orders.length ? Math.round(totalRevenue / store.orders.length) : 0,
-      totalOrders: store.orders.length,
+      averageOrderValue: allOrders.length ? Math.round(totalRevenue / allOrders.length) : 0,
+      totalOrders: allOrders.length,
       pendingOrders,
       totalCustomers: store.customers.length,
       products: store.products.length,
       lowStockProducts: lowStock.length,
       chart,
-      recentOrders: store.orders,
+      recentOrders: allOrders,
       topProducts: store.products.filter((product) => product.popular).slice(0, 4),
       lowStock,
-    });
+    };
   },
   products: async () => (await fsGet()).products,
   categories: async () => (await fsGet()).categories,
   collections: async () => (await fsGet()).collections,
-  customers: () => delay(loadStore().customers),
-  orders: () => apiConfigured && !demoMode ? requestApi<Order[]>("/admin/orders") : delay(loadStore().orders),
+  customers: () => fsGet().then((s) => s.customers),
+  orders: () => firestoreOrdersEnabled ? listFirestoreOrders() : fsGet().then((s) => s.orders),
   orderByNumber: (orderNumber: string, email?: string) => {
-    if (API_BASE_URL && !demoMode) return requestApi<Order | null>(`/orders/track?${new URLSearchParams({ orderNumber, email: email ?? "" }).toString()}`).then((order) => order ?? undefined);
+    if (firestoreOrdersEnabled) return findFirestoreOrder(orderNumber, email);
     const normalized = `#${orderNumber.trim().replace(/^#+/, "")}`.toUpperCase();
     const normalizedEmail = email?.trim().toLowerCase();
-    const order = loadStore().orders.find((item) => item.orderNumber.toUpperCase() === normalized && (!normalizedEmail || item.customerEmail.toLowerCase() === normalizedEmail));
-    return delay(order);
+    return fsGet().then((s) => s.orders.find((item) => item.orderNumber.toUpperCase() === normalized && (!normalizedEmail || item.customerEmail.toLowerCase() === normalizedEmail)));
   },
-  notifications: () => delay(loadStore().notifications),
+  notifications: () => fsGet().then((s) => s.notifications),
   inventoryHistory: async () => (await fsGet()).inventoryHistory,
   discounts: async () => (await fsGet()).discounts,
   shippingZones: async () => (await fsGet()).shippingZones,
@@ -366,29 +352,31 @@ export const adminApi = {
     }
     return undefined;
   }),
-  updateOrderStatus: (orderId: string, status: OrderStatus) => apiConfigured && !demoMode
-    ? requestApi<{ ok: true }>(`/admin/orders/${orderId}`, { method: "POST", body: JSON.stringify({ status }) })
-    : delay(updateStore((state) => {
-    const order = state.orders.find((item) => item.id === orderId);
-    if (order) {
-      order.status = status;
-      addNotification(state, { type: "email", recipient: order.customerEmail, subject: `Order ${order.orderNumber} is ${status.replace(/_/g, " ")}`, message: `Your GODID order status changed to ${status.replace(/_/g, " ")}.` });
-      addNotification(state, { type: "whatsapp", recipient: order.customerPhone, subject: "Order status update", message: `${order.orderNumber}: ${status.replace(/_/g, " ")}.` });
-    }
-    return order;
-  })),
-  updatePaymentStatus: (orderId: string, status: PaymentStatus) => apiConfigured && !demoMode
-    ? requestApi<{ ok: true }>(`/admin/orders/${orderId}`, { method: "POST", body: JSON.stringify({ paymentStatus: status }) })
-    : delay(updateStore((state) => {
-    const order = state.orders.find((item) => item.id === orderId);
-    if (order) order.paymentStatus = status;
-    return order;
-  })),
-  updateCustomerStatus: (customerId: string, status: Customer["status"]) => delay(updateStore((state) => {
+  updateOrderStatus: (orderId: string, status: OrderStatus) => {
+    if (firestoreOrdersEnabled) return updateFirestoreOrder(orderId, { status });
+    return fsUpdate((state) => {
+      const order = state.orders.find((item) => item.id === orderId);
+      if (order) {
+        order.status = status;
+        addNotification(state, { type: "email", recipient: order.customerEmail, subject: `Order ${order.orderNumber} is ${status.replace(/_/g, " ")}`, message: `Your GODID order status changed to ${status.replace(/_/g, " ")}.` });
+        addNotification(state, { type: "whatsapp", recipient: order.customerPhone, subject: "Order status update", message: `${order.orderNumber}: ${status.replace(/_/g, " ")}.` });
+      }
+      return order;
+    });
+  },
+  updatePaymentStatus: (orderId: string, status: PaymentStatus) => {
+    if (firestoreOrdersEnabled) return updateFirestoreOrder(orderId, { paymentStatus: status });
+    return fsUpdate((state) => {
+      const order = state.orders.find((item) => item.id === orderId);
+      if (order) order.paymentStatus = status;
+      return order;
+    });
+  },
+  updateCustomerStatus: (customerId: string, status: Customer["status"]) => fsUpdate((state) => {
     const customer = state.customers.find((item) => item.id === customerId);
     if (customer) customer.status = status;
     return customer;
-  })),
+  }),
   saveCollection: (payload: Collection) => fsUpdate((state) => {
     const collection = { ...payload, slug: payload.slug || slugify(payload.name) };
     const index = state.collections.findIndex((item) => item.id === collection.id);

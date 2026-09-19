@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "../../state/CartContext";
+import { useSiteConfig } from "../../hooks/useSiteConfig";
 import { BrandLogo } from "../brand/BrandLogo";
 import { Button } from "../ui/Button";
 
@@ -27,16 +28,17 @@ const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) =>
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
   const { openCart, count } = useCart();
+  const { navLogo } = useSiteConfig();
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
       <div className="bg-ink text-white">
         <div className="mx-auto flex min-h-8 max-w-7xl items-center justify-center px-4 text-center text-[10px] font-semibold uppercase tracking-[0.18em] sm:justify-between lg:px-8">
-          <span>God in Every Design</span>
+          <span>Made For The Culture</span>
           <Link href="/shipping" className="hidden text-white/75 transition hover:text-white sm:inline">Delivery nationwide across Nigeria <span aria-hidden="true" className="ml-1 text-accent">↗</span></Link>
         </div>
       </div>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 lg:px-8">
-        <BrandLogo to="/" size="sm" />
+        <BrandLogo to="/" size="sm" navLogoUrl={navLogo} />
         <nav className="hidden items-center gap-8 text-xs font-bold uppercase tracking-[0.15em] lg:flex">
           {links.map((link) => <NavLink key={link.to} to={link.to}>{link.label}</NavLink>)}
         </nav>
