@@ -365,7 +365,7 @@ export const adminApi = {
       }
     }
     return undefined;
-  })),
+  }),
   updateOrderStatus: (orderId: string, status: OrderStatus) => apiConfigured && !demoMode
     ? requestApi<{ ok: true }>(`/admin/orders/${orderId}`, { method: "POST", body: JSON.stringify({ status }) })
     : delay(updateStore((state) => {
