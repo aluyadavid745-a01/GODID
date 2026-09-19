@@ -2,7 +2,7 @@ import { customers, discounts, homepageContent, orders, shippingZones, storeSett
 import { NIGERIAN_STATES } from "../data/nigeria";
 import { firestoreOrdersEnabled, findFirestoreOrder, listFirestoreOrders, saveFirestoreOrder, updateFirestoreOrder } from "./firestoreOrders";
 import { getSharedStore, updateSharedStore, sharedStoreEnabled, type SharedStoreState } from "./firestoreStore";
-import type { Address, CartItem, Category, Collection, ContentPage, Customer, Discount, HomepageContent, InventoryHistoryEntry, MoneySummary, NotificationRecord, Order, OrderStatus, PaymentStatus, Product, ProductStatus, ShippingZone, StoreSettings } from "../types/domain";
+import type { Address, CartItem, Category, Collection, ContentPage, Customer, Discount, HomepageContent, InventoryHistoryEntry, MoneySummary, NotificationRecord, Order, OrderStatus, PaymentStatus, Product, ProductStatus, Review, ShippingZone, StoreSettings } from "../types/domain";
 
 const delay = <T,>(value: T, ms = 120) => new Promise<T>((resolve) => window.setTimeout(() => resolve(value), ms));
 const STORAGE_KEY = "godid-admin-store-v1";
@@ -32,6 +32,7 @@ interface StoreState {
   notifications: NotificationRecord[];
   inventoryHistory: InventoryHistoryEntry[];
   storeSettings: StoreSettings;
+  reviews: Review[];
 }
 
 const contentPages: ContentPage[] = [
@@ -57,6 +58,7 @@ const initialState: StoreState = {
   notifications: [],
   inventoryHistory: [],
   storeSettings,
+  reviews: [],
 };
 
 // Subset of initialState compatible with SharedStoreState (for Firestore fallback)
@@ -70,6 +72,7 @@ const sharedInitial: SharedStoreState = {
   contentPages,
   inventoryHistory: [],
   storeSettings,
+  reviews: [],
 };
 
 // Firestore-aware read
@@ -168,6 +171,7 @@ export const catalogApi = {
   getHomepage: async () => (await fsGet()).homepageContent,
   listContentPages: async () => (await fsGet()).contentPages,
   getContentPage: async (slug: string) => (await fsGet()).contentPages.find((p) => p.slug === slug),
+  getProductReviews: async (productId: string) => (await fsGet()).reviews.filter((r) => r.productId === productId && r.approved),
 };
 
 export const commerceApi = {
@@ -273,6 +277,12 @@ export const commerceApi = {
     });
     return delay(order, 300);
   },
+  submitReview: (payload: { productId: string; productName: string; authorName: string; rating: 1 | 2 | 3 | 4 | 5; body: string }) =>
+    fsUpdate((state) => {
+      const review: Review = { id: crypto.randomUUID(), ...payload, createdAt: new Date().toISOString(), approved: true };
+      state.reviews = [...(state.reviews ?? []), review];
+      return review;
+    }),
 };
 
 export const adminApi = {
@@ -444,6 +454,9 @@ export const adminApi = {
     state.storeSettings = payload;
     return state.storeSettings;
   }),
+  reviews: async () => (await fsGet()).reviews ?? [],
+  deleteReview: (id: string) => fsUpdate((state) => { state.reviews = (state.reviews ?? []).filter((r) => r.id !== id); return id; }),
+  approveReview: (id: string, approved: boolean) => fsUpdate((state) => { const r = (state.reviews ?? []).find((r) => r.id === id); if (r) r.approved = approved; return id; }),
 };
 
 export const newsletterApi = {

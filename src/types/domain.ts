@@ -200,6 +200,17 @@ export interface AdminUser {
   active: boolean;
 }
 
+export interface Review {
+  id: ID;
+  productId: ID;
+  productName: string;
+  authorName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  body: string;
+  createdAt: string;
+  approved: boolean;
+}
+
 export interface StoreSettings {
   storeName: string;
   currency: "NGN";

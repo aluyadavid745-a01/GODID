@@ -1,5 +1,5 @@
 'use client'
-import { BarChart3, Boxes, Gift, Home, LayoutDashboard, LogOut, Menu, Package, Settings, ShoppingCart, Tags, Truck, Users, X } from "lucide-react";
+import { BarChart3, Boxes, Gift, Home, LayoutDashboard, LogOut, Menu, Package, Settings, ShoppingCart, Star, Tags, Truck, Users, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -14,6 +14,7 @@ const nav = [
   { label: "Customers", to: "/admin/customers", icon: Users },
   { label: "Collections", to: "/admin/collections", icon: Gift },
   { label: "Categories", to: "/admin/categories", icon: Tags },
+  { label: "Reviews", to: "/admin/reviews", icon: Star },
   { label: "Discounts", to: "/admin/discounts", icon: BarChart3 },
   { label: "Content", to: "/admin/content", icon: Home },
   { label: "Shipping", to: "/admin/shipping", icon: Truck },

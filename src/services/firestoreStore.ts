@@ -1,6 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { doc, getDoc, getFirestore, runTransaction } from "firebase/firestore";
-import type { Category, Collection, ContentPage, Discount, HomepageContent, InventoryHistoryEntry, Product, ShippingZone, StoreSettings } from "../types/domain";
+import type { Category, Collection, ContentPage, Discount, HomepageContent, InventoryHistoryEntry, Product, Review, ShippingZone, StoreSettings } from "../types/domain";
 import { firebaseConfig, firebaseConfigured } from "./firebaseConfig";
 
 export interface SharedStoreState {
@@ -13,6 +13,7 @@ export interface SharedStoreState {
   contentPages: ContentPage[];
   inventoryHistory: InventoryHistoryEntry[];
   storeSettings: StoreSettings;
+  reviews: Review[];
 }
 
 export const sharedStoreEnabled = firebaseConfigured && process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
@@ -27,6 +28,7 @@ const publicProjection = (state: SharedStoreState): SharedStoreState => ({
   categories: state.categories.filter((category) => category.published),
   collections: state.collections.filter((collection) => collection.published),
   inventoryHistory: [],
+  reviews: (state.reviews ?? []).filter((r) => r.approved),
 });
 
 export const getSharedStore = async (fallback: SharedStoreState): Promise<SharedStoreState> => {
