@@ -18,9 +18,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export const Button = ({ variant = "primary", to, href, className = "", children, ...props }: ButtonProps) => {
+export const Button = ({ variant = "primary", to, href, className = "", children, onClick, ...props }: ButtonProps) => {
   const classes = `focus-ring inline-flex min-h-11 min-w-0 items-center justify-center gap-2 border px-5 py-2.5 text-center text-sm font-semibold uppercase tracking-[0.08em] transition sm:tracking-[0.12em] ${styles[variant]} ${className}`;
-  if (to) return <Link href={to} className={classes}>{children}</Link>;
+  if (to) return <Link href={to} className={classes} onClick={onClick}>{children}</Link>;
   if (href) return <a href={href} target="_blank" rel="noreferrer" className={classes}>{children}</a>;
   return <button className={classes} {...props}>{children}</button>;
 };

@@ -211,7 +211,19 @@ export const AdminProducts = () => {
               )}
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Input label="Color name" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} placeholder="e.g. Black" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addColor(); } }} />
+                  <Input label="Color name" value={newColorName} onChange={(e) => {
+                    const val = e.target.value;
+                    setNewColorName(val);
+                    if (typeof document !== "undefined") {
+                      const ctx = document.createElement("canvas").getContext("2d");
+                      if (ctx) {
+                        ctx.fillStyle = "#654321";
+                        ctx.fillStyle = val.trim();
+                        const resolved = ctx.fillStyle;
+                        if (resolved !== "#654321") setNewColorHex(resolved);
+                      }
+                    }
+                  }} placeholder="e.g. Red" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addColor(); } }} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-muted">Hex</label>
