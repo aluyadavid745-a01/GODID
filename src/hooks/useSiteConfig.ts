@@ -1,20 +1,13 @@
 'use client'
 import { useEffect, useState } from "react";
 import { adminApi } from "../services/api";
-import type { StoreSettings } from "../types/domain";
-
-let cache: StoreSettings | null = null;
 
 export const useSiteConfig = () => {
-  const [settings, setSettings] = useState<StoreSettings | null>(cache);
+  const [navLogo, setNavLogo] = useState("");
 
   useEffect(() => {
-    if (cache) return;
-    adminApi.settings().then((s) => {
-      cache = s;
-      setSettings(s);
-    });
+    adminApi.settings().then((s) => setNavLogo(s.navLogo ?? ""));
   }, []);
 
-  return { navLogo: settings?.navLogo ?? "" };
+  return { navLogo };
 };
