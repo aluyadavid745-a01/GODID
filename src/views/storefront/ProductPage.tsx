@@ -15,6 +15,7 @@ export const ProductPage = () => {
   const params = useParams();
   const slug = params?.slug as string | undefined;
   const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [related, setRelated] = useState<Product[]>([]);
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
@@ -24,7 +25,9 @@ export const ProductPage = () => {
 
   useEffect(() => {
     if (!slug) return;
+    setLoading(true);
     catalogApi.getProductBySlug(slug).then((item) => {
+      setLoading(false);
       if (!item) return;
       setProduct(item);
       setColor(item.colors[0].name);
@@ -40,6 +43,7 @@ export const ProductPage = () => {
   const variant = useMemo(() => product?.variants.find((item) => item.color === color && item.size === size), [color, product, size]);
   const available = Boolean(product && variant && inventoryService.isVariantAvailable(product, variant.id, quantity));
 
+  if (loading) return <main className="min-h-screen px-4 py-20"><div className="h-8 w-48 animate-pulse rounded bg-line" /></main>;
   if (!product) return <main className="min-h-screen px-4 py-20">Product not found.</main>;
 
   const toggleWishlist = () => {

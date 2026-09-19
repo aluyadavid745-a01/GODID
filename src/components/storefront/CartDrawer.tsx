@@ -2,15 +2,24 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 import Link from "next/link";
-import { products } from "../../data/mockData";
+import { useEffect, useState } from "react";
+import { catalogApi } from "../../services/api";
 import { useCart } from "../../state/CartContext";
+import type { Product } from "../../types/domain";
 import { formatNaira } from "../../utils/format";
 import { Button } from "../ui/Button";
 
 export const CartDrawer = () => {
   const { isOpen, closeCart, items, updateQuantity, removeItem } = useCart();
+  const [catalog, setCatalog] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    catalogApi.listProducts({}).then(setCatalog);
+  }, [isOpen]);
+
   const subtotal = items.reduce((sum, item) => {
-    const product = products.find((entry) => entry.id === item.productId);
+    const product = catalog.find((entry) => entry.id === item.productId);
     return sum + (product ? (product.salePrice ?? product.price) * item.quantity : 0);
   }, 0);
 
@@ -25,7 +34,7 @@ export const CartDrawer = () => {
             </header>
             <div className="flex-1 overflow-y-auto p-5">
               {items.length ? items.map((item) => {
-                const product = products.find((entry) => entry.id === item.productId);
+                const product = catalog.find((entry) => entry.id === item.productId);
                 const variant = product?.variants.find((entry) => entry.id === item.variantId);
                 if (!product || !variant) return null;
                 return (
