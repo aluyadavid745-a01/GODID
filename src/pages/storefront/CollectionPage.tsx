@@ -1,12 +1,14 @@
+'use client'
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
 import { catalogApi } from "../../services/api";
 import type { Collection, Product } from "../../types/domain";
 import { useMeta } from "../../hooks/useMeta";
 
 export const CollectionPage = () => {
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
   const [collection, setCollection] = useState<Collection | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {

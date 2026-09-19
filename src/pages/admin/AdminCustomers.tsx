@@ -1,3 +1,4 @@
+'use client'
 import { useEffect, useState } from "react";
 import { DataTable } from "../../components/ui/DataTable";
 import { Input } from "../../components/ui/Input";

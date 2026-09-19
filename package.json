@@ -2,36 +2,30 @@
   "name": "godid-fashion-commerce",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
     "firebase": "^12.19.0",
     "framer-motion": "latest",
     "gsap": "latest",
     "lucide-react": "latest",
+    "next": "^15.0.0",
     "react": "latest",
-    "react-dom": "latest",
-    "react-router-dom": "latest",
-    "typescript": "latest",
-    "vite": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "@eslint/js": "latest",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^20.0.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
-    "eslint": "latest",
-    "eslint-plugin-react-hooks": "latest",
-    "eslint-plugin-react-refresh": "latest",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.0.0",
     "postcss": "latest",
     "tailwindcss": "^3.4.17",
-    "typescript-eslint": "^8.70.0"
+    "typescript": "latest"
   }
 }

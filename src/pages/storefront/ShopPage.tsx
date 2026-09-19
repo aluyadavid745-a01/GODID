@@ -1,6 +1,7 @@
+'use client'
 import { SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
@@ -9,7 +10,8 @@ import type { Category, Collection, Product } from "../../types/domain";
 import { useMeta } from "../../hooks/useMeta";
 
 export const ShopPage = () => {
-  const { categorySlug } = useParams();
+  const params = useParams();
+  const categorySlug = params?.categorySlug as string | undefined;
   const [products, setProducts] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

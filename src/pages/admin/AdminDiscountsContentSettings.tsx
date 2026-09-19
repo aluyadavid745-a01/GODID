@@ -1,10 +1,13 @@
+'use client'
 import { Plus, Save, Trash2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { DataTable } from "../../components/ui/DataTable";
+import { ImageUpload } from "../../components/ui/ImageUpload";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
+import { uploadImage } from "../../services/firestoreStore";
 import { NIGERIAN_STATES } from "../../data/nigeria";
 import { adminApi } from "../../services/api";
 import type { ContentPage, Discount, DiscountType, HomepageContent, ShippingZone, StoreSettings } from "../../types/domain";
@@ -84,13 +87,49 @@ export const AdminContent = () => {
       <section className="grid gap-5 border border-line bg-white p-5">
         <Input label="Hero headline" value={content.heroHeadline} onChange={(event) => setContent({ ...content, heroHeadline: event.target.value })} />
         <Input label="Hero description" value={content.heroDescription} onChange={(event) => setContent({ ...content, heroDescription: event.target.value })} />
-        <Input label="Hero image URL" value={content.heroImage} onChange={(event) => setContent({ ...content, heroImage: event.target.value })} />
+        <ImageUpload
+          label="Hero image"
+          value={content.heroImage}
+          uploadFn={(file) => uploadImage("homepage/hero", file)}
+          onChange={(url) => setContent({ ...content, heroImage: url })}
+        />
         <Input label="Hero primary button" value={content.primaryCta} onChange={(event) => setContent({ ...content, primaryCta: event.target.value })} />
         <Input label="Hero secondary button" value={content.secondaryCta} onChange={(event) => setContent({ ...content, secondaryCta: event.target.value })} />
         <Input label="Brand story" value={content.brandStory} onChange={(event) => setContent({ ...content, brandStory: event.target.value })} />
         <Input label="Newsletter title" value={content.newsletterTitle} onChange={(event) => setContent({ ...content, newsletterTitle: event.target.value })} />
         <Input label="Newsletter text" value={content.newsletterText} onChange={(event) => setContent({ ...content, newsletterText: event.target.value })} />
         <Button className="w-fit" onClick={save}><Save size={16} /> Save content</Button>
+      </section>
+      <section className="grid gap-5 border border-line bg-white p-5">
+        <div>
+          <h3 className="font-display text-2xl font-semibold">Lookbook images</h3>
+          <p className="mt-1 text-sm text-muted">Upload images for the homepage lookbook gallery.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {content.lookbookImages.map((url, index) => (
+            <div key={index} className="relative">
+              <img src={url} alt={`Lookbook ${index + 1}`} className="h-40 w-full object-cover border border-line" />
+              <button
+                type="button"
+                onClick={() => setContent({ ...content, lookbookImages: content.lookbookImages.filter((_, i) => i !== index) })}
+                className="absolute right-1 top-1 rounded bg-white p-1 shadow-sm hover:bg-bone"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <ImageUpload
+          label="Add lookbook image"
+          value=""
+          uploadFn={async (file) => {
+            const url = await uploadImage(`homepage/lookbook`, file);
+            setContent((c) => c ? { ...c, lookbookImages: [...c.lookbookImages, url] } : c!);
+            return url;
+          }}
+          onChange={() => {}}
+        />
+        <Button className="w-fit" onClick={save}><Save size={16} /> Save lookbook</Button>
       </section>
       <section className="grid gap-5 border border-line bg-white p-5">
         <div>

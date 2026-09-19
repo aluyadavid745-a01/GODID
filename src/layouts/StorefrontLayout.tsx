@@ -1,12 +1,14 @@
-import { Outlet } from "react-router-dom";
+'use client'
 import { CartDrawer } from "../components/storefront/CartDrawer";
 import { Footer } from "../components/storefront/Footer";
 import { Navbar } from "../components/storefront/Navbar";
 
-export const StorefrontLayout = () => (
+interface Props { children: React.ReactNode }
+
+export const StorefrontLayout = ({ children }: Props) => (
   <div className="min-h-screen bg-bone text-ink">
     <Navbar />
-    <Outlet />
+    {children}
     <Footer />
     <CartDrawer />
   </div>

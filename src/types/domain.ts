@@ -126,6 +126,7 @@ export interface Order {
   deliveryMethod: string;
   totals: MoneySummary;
   createdAt: string;
+  pricingStatus?: "unverified" | "verified";
 }
 
 export interface Discount {

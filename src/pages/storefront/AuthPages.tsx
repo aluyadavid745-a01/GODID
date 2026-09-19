@@ -1,5 +1,6 @@
+'use client'
 import { FormEvent, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../state/AuthContext";
@@ -9,20 +10,23 @@ export const LoginPage = () => <AuthForm mode="login" />;
 export const RegisterPage = () => <AuthForm mode="register" />;
 const AuthForm = ({ mode }: { mode: "login" | "register" }) => {
   const { user, login, register } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   useMeta(mode === "login" ? "Login | GODID" : "Register | GODID", "Access your GODID customer account.");
-  if (user?.role === "customer") return <Navigate to="/account" replace />;
+  if (user?.role === "customer") {
+    router.replace("/account");
+    return null;
+  }
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
     try {
       if (mode === "register") await register(name, email, password);
       else await login(email, password, "customer");
-      navigate("/account");
+      router.push("/account");
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Could not authenticate.");
     }

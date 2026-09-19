@@ -1,5 +1,6 @@
+'use client'
 import { FormEvent, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 import { OrderStatus } from "../../components/storefront/OrderStatus";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -9,7 +10,7 @@ import { formatDate, formatNaira, titleCase } from "../../utils/format";
 import { useMeta } from "../../hooks/useMeta";
 
 export const OrderTrackingPage = () => {
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const [orderNumber, setOrderNumber] = useState(() => searchParams.get("order") ?? "");
   const [email, setEmail] = useState("");
   const [order, setOrder] = useState<Order | undefined>();

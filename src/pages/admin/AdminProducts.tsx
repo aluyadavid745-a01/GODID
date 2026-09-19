@@ -1,3 +1,4 @@
+'use client'
 import { Edit, Eye, Plus, Save, Trash2, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/Button";
@@ -6,6 +7,8 @@ import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { adminApi } from "../../services/api";
+import { ImageUpload } from "../../components/ui/ImageUpload";
+import { uploadImage } from "../../services/firestoreStore";
 import type { Category, Collection, Product, ProductStatus } from "../../types/domain";
 import { formatNaira } from "../../utils/format";
 import { useMeta } from "../../hooks/useMeta";
@@ -76,12 +79,6 @@ export const AdminProducts = () => {
     refresh();
   };
 
-  const uploadMainImage = (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => updateEditing("images", [String(reader.result), ...(editing?.images.slice(1) ?? [])]);
-    reader.readAsDataURL(file);
-  };
 
   return (
     <div className="grid gap-6">
@@ -118,9 +115,18 @@ export const AdminProducts = () => {
               <Select label="Category" value={editing.categoryId} onChange={(event) => updateEditing("categoryId", event.target.value)} options={categories.map((category) => ({ label: category.name, value: category.id }))} />
               <Select label="Status" value={editing.status} onChange={(event) => updateEditing("status", event.target.value as ProductStatus)} options={[{ label: "Published", value: "published" }, { label: "Draft", value: "draft" }]} />
             </div>
-            <Input label="Main image URL" value={editing.images[0] ?? ""} onChange={(event) => updateEditing("images", [event.target.value, ...editing.images.slice(1)])} />
-            <Input label="Upload main image" type="file" accept="image/*" onChange={(event) => uploadMainImage(event.target.files?.[0])} />
-            <Input label="Hover image URL" value={editing.hoverImage} onChange={(event) => updateEditing("hoverImage", event.target.value)} />
+            <ImageUpload
+              label="Main image"
+              value={editing.images[0] ?? ""}
+              uploadFn={(file) => uploadImage(`products/${editing.id}`, file)}
+              onChange={(url) => updateEditing("images", [url, ...editing.images.slice(1)])}
+            />
+            <ImageUpload
+              label="Hover image"
+              value={editing.hoverImage}
+              uploadFn={(file) => uploadImage(`products/${editing.id}/hover`, file)}
+              onChange={(url) => updateEditing("hoverImage", url)}
+            />
             <Input label="Materials" value={editing.materials} onChange={(event) => updateEditing("materials", event.target.value)} />
             <Input label="Care" value={editing.care} onChange={(event) => updateEditing("care", event.target.value)} />
             <Input label="Details" value={editing.details.join(", ")} onChange={(event) => updateEditing("details", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))} hint="Separate details with commas." />

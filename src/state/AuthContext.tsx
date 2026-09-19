@@ -1,3 +1,4 @@
+'use client'
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { getApp, getApps, initializeApp } from "firebase/app";
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
     const saved = localStorage.getItem("godid-auth");
     return saved ? JSON.parse(saved) as User : null;
   });
@@ -37,22 +39,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const persist = (next: User | null) => {
     setUser(next);
-    if (next) localStorage.setItem("godid-auth", JSON.stringify(next));
-    else localStorage.removeItem("godid-auth");
+    if (typeof window !== "undefined") {
+      if (next) localStorage.setItem("godid-auth", JSON.stringify(next));
+      else localStorage.removeItem("godid-auth");
+    }
   };
 
   useEffect(() => {
     if (!auth) return undefined;
     return onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        localStorage.removeItem("godid-api-token");
+        if (typeof window !== "undefined") localStorage.removeItem("godid-api-token");
         persist(null);
         setIsReady(true);
         return;
       }
       const token = await firebaseUser.getIdToken();
       const claims = await firebaseUser.getIdTokenResult();
-      localStorage.setItem("godid-api-token", token);
+      if (typeof window !== "undefined") localStorage.setItem("godid-api-token", token);
       persist({
         id: firebaseUser.uid,
         name: firebaseUser.displayName ?? firebaseUser.email ?? "GODID Admin",
@@ -69,14 +73,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin: user?.role === "admin",
       isReady,
       login: async (email, password, role = "customer") => {
-        if (firebaseConfigured && import.meta.env.VITE_DEMO_MODE !== "true") {
+        if (firebaseConfigured && process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
           const credential = await signInWithEmailAndPassword(auth!, email.trim(), password);
           const tokenResult = await credential.user.getIdTokenResult(true);
           if (role === "admin" && tokenResult.claims.admin !== true) {
             await signOut(auth!);
             throw new Error("This Firebase account does not have the GODID admin claim.");
           }
-          localStorage.setItem("godid-api-token", await credential.user.getIdToken());
+          if (typeof window !== "undefined") localStorage.setItem("godid-api-token", await credential.user.getIdToken());
           persist({
             id: credential.user.uid,
             name: credential.user.displayName ?? credential.user.email ?? "GODID Admin",
@@ -85,17 +89,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
           return;
         }
-        if (import.meta.env.VITE_DEMO_MODE !== "true") throw new Error("Admin/customer login is disabled until a secure non-Firebase auth server is configured.");
+        if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") throw new Error("Admin/customer login is disabled until a secure non-Firebase auth server is configured.");
         if (password.length < 8) throw new Error("Password must be at least 8 characters.");
         persist({ id: role === "admin" ? "admin-demo" : "customer-demo", name: role === "admin" ? "Store Owner" : "GODID Customer", email: email.trim().toLowerCase(), role });
       },
       register: async (name, email, password) => {
-        if (import.meta.env.VITE_DEMO_MODE !== "true") throw new Error("Customer registration is disabled until a secure non-Firebase auth server is configured.");
+        if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") throw new Error("Customer registration is disabled until a secure non-Firebase auth server is configured.");
         if (password.length < 8) throw new Error("Password must be at least 8 characters.");
         persist({ id: "customer-demo", name: name.trim(), email: email.trim().toLowerCase(), role: "customer" });
       },
       logout: () => {
-        localStorage.removeItem("godid-api-token");
+        if (typeof window !== "undefined") localStorage.removeItem("godid-api-token");
         if (auth) void signOut(auth);
         persist(null);
       },

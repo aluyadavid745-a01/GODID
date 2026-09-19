@@ -1,5 +1,6 @@
+'use client'
 import { FormEvent, useEffect, useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import Link from "next/link";
 import { OrderStatus } from "../../components/storefront/OrderStatus";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -16,7 +17,11 @@ const addressKey = "godid-customer-addresses";
 const wishlistKey = "godid-wishlist";
 const newAddress = (): Address => ({ id: `addr-${Date.now()}`, fullName: "", phone: "", state: "Lagos", city: "", street: "", apartment: "", instructions: "" });
 
-export const AccountLayout = () => {
+interface AccountLayoutProps {
+  children: React.ReactNode;
+}
+
+export const AccountLayout = ({ children }: AccountLayoutProps) => {
   const { user, logout } = useAuth();
   useMeta("Account | GODID", "Manage your GODID profile, orders, wishlist, and addresses.");
   return (
@@ -27,9 +32,9 @@ export const AccountLayout = () => {
       </div>
       <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
         <nav className="admin-scrollbar flex h-fit min-w-0 gap-2 overflow-x-auto border border-line bg-white p-2 lg:block lg:overflow-visible lg:p-4">
-          {["profile", "orders", "wishlist", "addresses"].map((item) => <Link key={item} to={`/account/${item === "profile" ? "" : item}`} className="shrink-0 border border-line px-3 py-2 text-sm font-semibold capitalize lg:block lg:border-x-0 lg:border-t-0 lg:px-0 lg:py-3 lg:last:border-0">{item}</Link>)}
+          {["profile", "orders", "wishlist", "addresses"].map((item) => <Link key={item} href={`/account/${item === "profile" ? "" : item}`} className="shrink-0 border border-line px-3 py-2 text-sm font-semibold capitalize lg:block lg:border-x-0 lg:border-t-0 lg:px-0 lg:py-3 lg:last:border-0">{item}</Link>)}
         </nav>
-        <Outlet />
+        {children}
       </div>
     </main>
   );
@@ -38,6 +43,7 @@ export const AccountLayout = () => {
 export const AccountDashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(() => {
+    if (typeof window === "undefined") return { name: "", email: "", phone: "" };
     const saved = localStorage.getItem(profileKey);
     return saved ? JSON.parse(saved) as { name: string; email: string; phone: string } : { name: user?.name ?? "", email: user?.email ?? "", phone: "" };
   });
@@ -90,14 +96,17 @@ export const AccountOrders = () => {
 export const WishlistPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
-    const ids = JSON.parse(localStorage.getItem(wishlistKey) ?? "[]") as string[];
+    const ids = JSON.parse(typeof window !== "undefined" ? (localStorage.getItem(wishlistKey) ?? "[]") : "[]") as string[];
     catalogApi.listProducts().then((items) => setProducts(items.filter((product) => ids.includes(product.id))));
   }, []);
-  return <section><h2 className="mb-5 font-display text-2xl font-semibold">Wishlist</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.length ? products.map((product) => <Link className="border border-line bg-white p-3" key={product.id} to={`/product/${product.slug}`}><img src={product.images[0]} alt={product.name} className="aspect-[4/5] object-cover" /><p className="mt-3 font-semibold">{product.name}</p></Link>) : <div className="border border-line bg-white p-8 text-muted">Your wishlist is empty.</div>}</div></section>;
+  return <section><h2 className="mb-5 font-display text-2xl font-semibold">Wishlist</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.length ? products.map((product) => <Link className="border border-line bg-white p-3" key={product.id} href={`/product/${product.slug}`}><img src={product.images[0]} alt={product.name} className="aspect-[4/5] object-cover" /><p className="mt-3 font-semibold">{product.name}</p></Link>) : <div className="border border-line bg-white p-8 text-muted">Your wishlist is empty.</div>}</div></section>;
 };
 
 export const AddressesPage = () => {
-  const [addresses, setAddresses] = useState<Address[]>(() => JSON.parse(localStorage.getItem(addressKey) ?? "[]") as Address[]);
+  const [addresses, setAddresses] = useState<Address[]>(() => {
+    if (typeof window === "undefined") return [];
+    return JSON.parse(localStorage.getItem(addressKey) ?? "[]") as Address[];
+  });
   const [form, setForm] = useState<Address>(() => newAddress());
   const save = (event: FormEvent) => {
     event.preventDefault();

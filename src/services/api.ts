@@ -4,12 +4,12 @@ import type { Address, CartItem, Category, Collection, ContentPage, Customer, Di
 
 const delay = <T,>(value: T, ms = 120) => new Promise<T>((resolve) => window.setTimeout(() => resolve(value), ms));
 const STORAGE_KEY = "godid-admin-store-v1";
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim().replace(/\/$/, "");
 export const apiConfigured = Boolean(API_BASE_URL);
-export const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
+export const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export const requestApi = async <T,>(path: string, init?: RequestInit): Promise<T> => {
-  if (!API_BASE_URL) throw new Error("The GODID API is not configured. Set VITE_API_BASE_URL before launch.");
+  if (!API_BASE_URL) throw new Error("The GODID API is not configured. Set NEXT_PUBLIC_API_BASE_URL before launch.");
   const token = typeof window !== "undefined" ? window.localStorage.getItem("godid-api-token") : null;
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(init?.headers ?? {}) } });
   const body = await response.json().catch(() => ({}));
@@ -187,7 +187,7 @@ export const commerceApi = {
       });
       return requestApi<Order>("/orders", { method: "POST", body: JSON.stringify({ ...payload, items, totals, shipping: totals.shipping, discount: totals.discount }) });
     }
-    if (!demoMode && !API_BASE_URL) throw new Error("Checkout is not configured for launch. Set VITE_API_BASE_URL to the deployed GODID API.");
+    if (!demoMode && !API_BASE_URL) throw new Error("Checkout is not configured for launch. Set NEXT_PUBLIC_API_BASE_URL to the deployed GODID API.");
     const totals = await commerceApi.calculateTotals(payload.items, payload.discountCode, payload.address.state);
     const store = loadStore();
     for (const item of payload.items) {

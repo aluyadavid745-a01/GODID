@@ -1,6 +1,7 @@
+'use client'
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { products } from "../../data/mockData";
 import { useCart } from "../../state/CartContext";
 import { formatNaira } from "../../utils/format";
@@ -55,7 +56,7 @@ export const CartDrawer = () => {
               <div className="mb-4 flex items-center justify-between font-semibold"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
               <div className="grid gap-3">
                 <Button to="/checkout" onClick={closeCart}><MessageCircle size={18} /> WhatsApp Checkout</Button>
-                <Link to="/cart" onClick={closeCart} className="text-center text-sm font-semibold underline">View full cart</Link>
+                <Link href="/cart" onClick={closeCart} className="text-center text-sm font-semibold underline">View full cart</Link>
               </div>
             </footer>
           </motion.div>

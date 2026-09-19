@@ -1,3 +1,4 @@
+'use client'
 import { Edit, Plus, Save, Trash2, X } from "lucide-react";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -7,6 +8,8 @@ import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { adminApi } from "../../services/api";
+import { ImageUpload } from "../../components/ui/ImageUpload";
+import { uploadImage } from "../../services/firestoreStore";
 import type { Category, Collection } from "../../types/domain";
 import { useMeta } from "../../hooks/useMeta";
 
@@ -32,7 +35,7 @@ export const AdminCollections = () => {
     { key: "published", header: "Published", render: (row: Collection) => row.published ? "Yes" : "No" },
   ]} onCreate={() => setEditing({ id: `col-${Date.now()}`, name: "", slug: "", description: "", image: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1400&h=1000&q=82", published: true, productIds: [] })} onEdit={setEditing} onDelete={async (row) => { if (window.confirm(`Delete ${row.name}?`)) { await adminApi.deleteCollection(row.id); setNotice("Collection deleted."); refresh(); } }} notice={notice}>
     <Editor open={Boolean(editing)} title={editing?.name || "Create collection"} onClose={() => setEditing(null)} onSubmit={save}>
-      {editing ? <SharedFields item={editing} onChange={setEditing} /> : null}
+      {editing ? <SharedFields item={editing} onChange={setEditing} uploadFolder={`collections/${editing.id}`} /> : null}
     </Editor>
   </Management>;
 };
@@ -59,7 +62,7 @@ export const AdminCategories = () => {
     { key: "published", header: "Published", render: (row: Category) => row.published ? "Yes" : "No" },
   ]} onCreate={() => setEditing({ id: `cat-${Date.now()}`, name: "", slug: "", description: "", image: "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=1400&h=1000&q=82", published: true })} onEdit={setEditing} onDelete={async (row) => { if (window.confirm(`Delete ${row.name}?`)) { await adminApi.deleteCategory(row.id); setNotice("Category deleted."); refresh(); } }} notice={notice}>
     <Editor open={Boolean(editing)} title={editing?.name || "Create category"} onClose={() => setEditing(null)} onSubmit={save}>
-      {editing ? <SharedFields item={editing} onChange={setEditing} /> : null}
+      {editing ? <SharedFields item={editing} onChange={setEditing} uploadFolder={`categories/${editing.id}`} /> : null}
     </Editor>
   </Management>;
 };
@@ -85,12 +88,17 @@ const Editor = ({ open, title, children, onClose, onSubmit }: { open: boolean; t
   </Modal>
 );
 
-const SharedFields = <T extends Category | Collection>({ item, onChange }: { item: T; onChange: (item: T) => void }) => (
+const SharedFields = <T extends Category | Collection>({ item, onChange, uploadFolder }: { item: T; onChange: (item: T) => void; uploadFolder: string }) => (
   <>
     <Input label="Name" value={item.name} required onChange={(event) => onChange({ ...item, name: event.target.value })} />
     <Input label="Slug" value={item.slug} placeholder="auto-generated if empty" onChange={(event) => onChange({ ...item, slug: event.target.value })} />
     <Input label="Description" value={item.description} required onChange={(event) => onChange({ ...item, description: event.target.value })} />
-    <Input label="Image URL" value={item.image} required onChange={(event) => onChange({ ...item, image: event.target.value })} />
+    <ImageUpload
+      label="Image"
+      value={item.image}
+      uploadFn={(file) => uploadImage(uploadFolder, file)}
+      onChange={(url) => onChange({ ...item, image: url })}
+    />
     <Select label="Published" value={item.published ? "true" : "false"} onChange={(event) => onChange({ ...item, published: event.target.value === "true" })} options={[{ label: "Published", value: "true" }, { label: "Hidden", value: "false" }]} />
   </>
 );

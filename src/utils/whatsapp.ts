@@ -30,7 +30,7 @@ export const buildOrderWhatsAppUrl = (order: Order) => {
     `Delivery: ${order.address.street}, ${order.address.city}, ${order.address.state}`,
     order.address.apartment ? `Apartment: ${order.address.apartment}` : "",
     order.address.instructions ? `Delivery notes: ${order.address.instructions}` : "",
-    `Total: ${formatNaira(order.totals.total)}`,
+    `${order.pricingStatus === "unverified" ? "Estimated total (please confirm with GODID)" : "Total"}: ${formatNaira(order.totals.total)}`,
   ].filter(Boolean).join("\n");
 
   return buildWhatsAppUrl(message);

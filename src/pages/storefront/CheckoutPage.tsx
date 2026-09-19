@@ -1,6 +1,7 @@
+'use client'
 import { ArrowRight, CheckCircle2, MessageCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Button } from "../../components/ui/Button";
@@ -16,8 +17,8 @@ const LAST_ORDER_KEY = "godid-last-order";
 
 export const CheckoutPage = () => {
   const { items, clearCart } = useCart();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
   const [discountCode, setDiscountCode] = useState(() => searchParams.get("discount") ?? "");
@@ -29,7 +30,10 @@ export const CheckoutPage = () => {
     commerceApi.calculateTotals(items, discountCode, form.state).then(setTotals);
   }, [discountCode, form.state, items]);
 
-  if (!items.length) return <Navigate to="/cart" replace />;
+  if (!items.length) {
+    router.replace("/cart");
+    return null;
+  }
 
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const next = async () => {
@@ -43,7 +47,7 @@ export const CheckoutPage = () => {
       localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ orderNumber: order.orderNumber, email: order.customerEmail }));
       clearCart();
       if (whatsappWindow) whatsappWindow.location.href = buildOrderWhatsAppUrl(order);
-      navigate(`/order-confirmation/${order.orderNumber.replace("#", "")}`, { state: { order } });
+      router.push(`/order-confirmation/${order.orderNumber.replace("#", "")}`);
     } catch (error) {
       whatsappWindow?.close();
       setError(error instanceof Error ? error.message : "Could not confirm this order. Please review your cart.");

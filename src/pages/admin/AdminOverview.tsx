@@ -1,3 +1,4 @@
+'use client'
 import { AlertTriangle, Banknote, Bell, Package, ShoppingBag, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Chart } from "../../components/ui/Chart";

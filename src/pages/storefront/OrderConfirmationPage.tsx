@@ -1,5 +1,6 @@
+'use client'
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import type { Order } from "../../types/domain";
@@ -12,6 +13,7 @@ const LAST_ORDER_KEY = "godid-last-order";
 
 const readLastOrder = () => {
   try {
+    if (typeof window === "undefined") return undefined;
     const saved = localStorage.getItem(LAST_ORDER_KEY);
     return saved ? JSON.parse(saved) as { orderNumber: string; email: string } : undefined;
   } catch {
@@ -20,13 +22,13 @@ const readLastOrder = () => {
 };
 
 export const OrderConfirmationPage = () => {
-  const { state } = useLocation();
-  const { orderNumber } = useParams();
+  const params = useParams();
+  const orderNumber = params?.orderNumber as string | undefined;
   const lastOrder = readLastOrder();
   const lastOrderNumber = lastOrder?.orderNumber;
   const lastOrderEmail = lastOrder?.email;
-  const [order, setOrder] = useState<Order | undefined>(state?.order as Order | undefined);
-  const [loading, setLoading] = useState(() => !state?.order && Boolean(orderNumber && lastOrder?.email));
+  const [order, setOrder] = useState<Order | undefined>(undefined);
+  const [loading, setLoading] = useState(() => Boolean(orderNumber && lastOrder?.email));
   useMeta("Order Confirmed | GODID", "Your GODID order confirmation.");
 
   useEffect(() => {

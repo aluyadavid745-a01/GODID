@@ -1,11 +1,13 @@
-import { useParams } from "react-router-dom";
+'use client'
+import { useParams } from "next/navigation";
 import { useMeta } from "../../hooks/useMeta";
 import { useEffect, useState } from "react";
 import { catalogApi } from "../../services/api";
 import type { ContentPage } from "../../types/domain";
 
 export const StaticPage = () => {
-  const { page = "about" } = useParams();
+  const params = useParams();
+  const page = (params?.page as string | undefined) ?? "about";
   const [content, setContent] = useState<ContentPage | null>(null);
   useMeta(`${content?.title ?? "Page"} | GODID`, `GODID ${content?.title ?? "store"} information.`);
   useEffect(() => {

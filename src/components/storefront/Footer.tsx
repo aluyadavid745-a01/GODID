@@ -1,5 +1,6 @@
+'use client'
 import { Camera, Mail, MessageCircle, Music2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { BrandLogo } from "../brand/BrandLogo";
 import { buildWhatsAppUrl } from "../../utils/whatsapp";
 
@@ -10,9 +11,9 @@ const groups = {
 };
 
 const socialLinks = [
-  { icon: Camera, href: import.meta.env.VITE_INSTAGRAM_URL, label: "Instagram" },
+  { icon: Camera, href: process.env.NEXT_PUBLIC_INSTAGRAM_URL, label: "Instagram" },
   { icon: MessageCircle, href: buildWhatsAppUrl("Hello GODID, I want to make an enquiry."), label: "WhatsApp" },
-  { icon: Music2, href: import.meta.env.VITE_TIKTOK_URL, label: "TikTok" },
+  { icon: Music2, href: process.env.NEXT_PUBLIC_TIKTOK_URL, label: "TikTok" },
   { icon: Mail, href: "mailto:hello@godid.studio", label: "Email" },
 ];
 
@@ -31,7 +32,7 @@ export const Footer = () => (
           <div key={label}>
             <h3 className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">{label}</h3>
             <div className="grid gap-3.5">
-              {links.map(({ label: linkLabel, to }) => <Link key={to} to={to} className="text-sm text-white/75 transition hover:text-white">{linkLabel}</Link>)}
+              {links.map(({ label: linkLabel, to }) => <Link key={to} href={to} className="text-sm text-white/75 transition hover:text-white">{linkLabel}</Link>)}
             </div>
           </div>
         ))}

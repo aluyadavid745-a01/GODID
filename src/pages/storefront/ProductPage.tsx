@@ -1,6 +1,7 @@
+'use client'
 import { Heart, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import { ProductGallery } from "../../components/storefront/ProductGallery";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
 import { Button } from "../../components/ui/Button";
@@ -11,7 +12,8 @@ import { formatNaira } from "../../utils/format";
 import { useMeta } from "../../hooks/useMeta";
 
 export const ProductPage = () => {
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [color, setColor] = useState("");
@@ -27,7 +29,7 @@ export const ProductPage = () => {
       setProduct(item);
       setColor(item.colors[0].name);
       setSize(item.sizes[0]);
-      const saved = JSON.parse(localStorage.getItem("godid-wishlist") ?? "[]") as string[];
+      const saved = JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("godid-wishlist") ?? "[]") : "[]") as string[];
       setWishlisted(saved.includes(item.id));
       catalogApi.listProducts({ category: item.categoryId }).then((items) => setRelated(items.filter((entry) => entry.id !== item.id).slice(0, 4)));
     });
@@ -41,7 +43,7 @@ export const ProductPage = () => {
   if (!product) return <main className="min-h-screen px-4 py-20">Product not found.</main>;
 
   const toggleWishlist = () => {
-    const saved = JSON.parse(localStorage.getItem("godid-wishlist") ?? "[]") as string[];
+    const saved = JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("godid-wishlist") ?? "[]") : "[]") as string[];
     const next = saved.includes(product.id) ? saved.filter((id) => id !== product.id) : [...saved, product.id];
     localStorage.setItem("godid-wishlist", JSON.stringify(next));
     setWishlisted(next.includes(product.id));

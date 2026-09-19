@@ -1,3 +1,4 @@
+'use client'
 import { createContext, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { CartItem } from "../types/domain";
@@ -20,13 +21,14 @@ const STORAGE_KEY = "godid-cart";
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? (JSON.parse(saved) as CartItem[]) : [];
   });
 
   const commit = (next: CartItem[]) => {
     setItems(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
   const value = useMemo<CartContextValue>(

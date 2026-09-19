@@ -1,6 +1,8 @@
+'use client'
 import { BarChart3, Boxes, Gift, Home, LayoutDashboard, LogOut, Menu, Package, Settings, ShoppingCart, Tags, Truck, Users, X } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { useAuth } from "../state/AuthContext";
 
@@ -18,14 +20,34 @@ const nav = [
   { label: "Settings", to: "/admin/settings", icon: Settings },
 ];
 
-export const AdminLayout = () => {
+interface NavLinkProps {
+  to: string;
+  end?: boolean;
+  onClick?: () => void;
+  className: (opts: { isActive: boolean }) => string;
+  children: React.ReactNode;
+}
+
+const NavLinkItem = ({ to, end, onClick, className, children }: NavLinkProps) => {
+  const pathname = usePathname();
+  const isActive = end ? pathname === to : pathname.startsWith(to);
+  return (
+    <Link href={to} onClick={onClick} className={className({ isActive })}>
+      {children}
+    </Link>
+  );
+};
+
+interface Props { children: React.ReactNode }
+
+export const AdminLayout = ({ children }: Props) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const signOut = () => {
     setMenuOpen(false);
     logout();
-    navigate("/admin/login");
+    router.push("/admin/login");
   };
 
   return (
@@ -38,9 +60,9 @@ export const AdminLayout = () => {
           </div>
           <nav className="admin-scrollbar flex-1 overflow-y-auto p-3">
             {nav.map(({ label, to, icon: Icon }) => (
-              <NavLink key={to} end={to === "/admin"} to={to} className={({ isActive }) => `mb-1 flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition ${isActive ? "bg-ink text-white" : "text-muted hover:bg-bone hover:text-ink"}`}>
+              <NavLinkItem key={to} end={to === "/admin"} to={to} className={({ isActive }) => `mb-1 flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition ${isActive ? "bg-ink text-white" : "text-muted hover:bg-bone hover:text-ink"}`}>
                 <Icon size={18} /> {label}
-              </NavLink>
+              </NavLinkItem>
             ))}
           </nav>
           <div className="border-t border-line p-4">
@@ -59,13 +81,13 @@ export const AdminLayout = () => {
           {menuOpen ? <div id="admin-mobile-nav" className="admin-scrollbar max-h-[calc(100dvh-70px)] overflow-y-auto border-t border-line px-4 py-4">
             <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {nav.map(({ label, to, icon: Icon }) => (
-                <NavLink key={to} end={to === "/admin"} to={to} onClick={() => setMenuOpen(false)} className={({ isActive }) => `flex min-h-11 min-w-0 items-center gap-2 border px-3 py-2 text-sm font-semibold transition ${isActive ? "border-ink bg-ink text-white" : "border-line bg-porcelain text-ink hover:border-ink"}`}>
+                <NavLinkItem key={to} end={to === "/admin"} to={to} onClick={() => setMenuOpen(false)} className={({ isActive }) => `flex min-h-11 min-w-0 items-center gap-2 border px-3 py-2 text-sm font-semibold transition ${isActive ? "border-ink bg-ink text-white" : "border-line bg-porcelain text-ink hover:border-ink"}`}>
                   <Icon size={17} className="shrink-0" /> <span className="truncate">{label}</span>
-                </NavLink>
+                </NavLinkItem>
               ))}
             </nav>
             <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-              <Link to="/" onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-semibold"><Home size={16} /> View store</Link>
+              <Link href="/" onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-semibold"><Home size={16} /> View store</Link>
               <button type="button" className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-semibold" onClick={signOut}><LogOut size={16} /> Logout</button>
             </div>
           </div> : null}
@@ -76,7 +98,7 @@ export const AdminLayout = () => {
             <a href="/" className="hidden border border-line bg-white px-4 py-2 text-sm font-semibold sm:inline-flex">View Store</a>
           </div>
         </header>
-        <main className="min-w-0 p-4 sm:p-5 lg:p-8"><Outlet /></main>
+        <main className="min-w-0 p-4 sm:p-5 lg:p-8">{children}</main>
       </div>
     </div>
   );

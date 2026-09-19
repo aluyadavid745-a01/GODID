@@ -1,3 +1,4 @@
+'use client'
 import { useEffect } from "react";
 
 export const useMeta = (title: string, description: string) => {

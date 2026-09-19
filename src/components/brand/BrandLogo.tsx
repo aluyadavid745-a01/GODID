@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+'use client'
+import Link from "next/link";
 import adminLogo from "../../assets/admin-logo.jpeg";
 import storefrontLogo from "../../assets/storefront-logo.jpeg";
 
@@ -20,13 +21,13 @@ export const BrandLogo = ({ to, size = "md", variant = "storefront" }: { to?: st
   const isAdmin = variant === "admin";
   const content = isAdmin ? (
     <span className="inline-flex items-center gap-2.5">
-      <img src={adminLogo} alt="" className={`${adminSizes[size]} shrink-0 rounded-md object-cover`} />
+      <img src={adminLogo.src ?? adminLogo} alt="" className={`${adminSizes[size]} shrink-0 rounded-md object-cover`} />
       <span className="max-w-32 font-display text-xs font-bold uppercase leading-tight tracking-[0.08em] text-ink sm:text-sm">God in Every Design</span>
     </span>
   ) : (
-    <img src={storefrontLogo} alt="GODID — God in Every Design" className={`${storefrontSizes[size]} block shrink-0 rounded-sm object-cover object-center`} />
+    <img src={storefrontLogo.src ?? storefrontLogo} alt="GODID — God in Every Design" className={`${storefrontSizes[size]} block shrink-0 rounded-sm object-cover object-center`} />
   );
 
-  if (to) return <Link to={to} aria-label="GODID home" className="focus-ring inline-flex">{content}</Link>;
+  if (to) return <Link href={to} aria-label="GODID home" className="focus-ring inline-flex">{content}</Link>;
   return <span aria-label={isAdmin ? "GODID — God in Every Design" : undefined} className="inline-flex">{content}</span>;
 };

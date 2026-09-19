@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+'use client'
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { commerceApi, catalogApi } from "../../services/api";
@@ -40,7 +41,7 @@ export const CartPage = () => {
               <article key={`${item.productId}-${item.variantId}`} className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-4 border border-line bg-porcelain p-3 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:p-4">
                 <img src={product.images[0]} alt={product.name} className="h-28 w-[88px] object-cover sm:h-[150px] sm:w-[120px]" />
                 <div className="min-w-0">
-                  <Link to={`/product/${product.slug}`} className="font-display text-base font-semibold sm:text-xl">{product.name}</Link>
+                  <Link href={`/product/${product.slug}`} className="font-display text-base font-semibold sm:text-xl">{product.name}</Link>
                   <p className="mt-2 text-sm text-muted">{variant.color} / {variant.size}</p>
                   <button className="mt-5 text-sm font-semibold underline" onClick={() => removeItem(item.productId, item.variantId)}>Remove</button>
                 </div>

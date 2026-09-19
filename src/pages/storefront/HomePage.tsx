@@ -1,7 +1,9 @@
+'use client'
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -11,7 +13,7 @@ import { useMeta } from "../../hooks/useMeta";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 
 export const HomePage = () => {
-  const { hash } = useLocation();
+  const pathname = usePathname();
   const [content, setContent] = useState<HomepageContent | null>(null);
   const [featured, setFeatured] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
@@ -33,8 +35,11 @@ export const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    if (content && hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" }));
-  }, [content, hash]);
+    if (content && typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" }));
+    }
+  }, [content, pathname]);
 
   if (!content) return <main className="min-h-screen" />;
 
@@ -109,7 +114,7 @@ export const HomePage = () => {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
-            <Link data-reveal key={category.id} to={`/shop/${category.slug}`} className="group relative block overflow-hidden bg-line focus-ring">
+            <Link data-reveal key={category.id} href={`/shop/${category.slug}`} className="group relative block overflow-hidden bg-line focus-ring">
               <img src={category.image} alt={category.name} className="aspect-[4/5] h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white">
@@ -155,7 +160,7 @@ export const HomePage = () => {
           </div>
           <div className="grid gap-4">
             {collections.slice(0, 3).map((collection) => (
-              <Link data-reveal key={collection.id} to={`/collection/${collection.slug}`} className="grid grid-cols-[80px_1fr_auto] items-center gap-4 border-b border-line py-3 transition hover:border-accent sm:grid-cols-[96px_1fr_auto]">
+              <Link data-reveal key={collection.id} href={`/collection/${collection.slug}`} className="grid grid-cols-[80px_1fr_auto] items-center gap-4 border-b border-line py-3 transition hover:border-accent sm:grid-cols-[96px_1fr_auto]">
                 <img src={collection.image} alt={collection.name} className="aspect-square object-cover" />
                 <div className="self-center">
                   <h3 className="font-display text-xl font-semibold">{collection.name}</h3>

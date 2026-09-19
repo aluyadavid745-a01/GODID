@@ -1,5 +1,6 @@
+'use client'
 import { FormEvent, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { BrandLogo } from "../../components/brand/BrandLogo";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -8,18 +9,21 @@ import { useMeta } from "../../hooks/useMeta";
 
 export const AdminLogin = () => {
   const { user, login } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   useMeta("Admin Login | GODID", "Secure GODID admin login.");
-  if (user?.role === "admin") return <Navigate to="/admin" replace />;
+  if (user?.role === "admin") {
+    router.replace("/admin");
+    return null;
+  }
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
     try {
       await login(email, password, "admin");
-      navigate("/admin");
+      router.push("/admin");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not sign in.");
     }

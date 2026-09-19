@@ -1,3 +1,4 @@
+'use client'
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ProductGrid } from "../../components/storefront/ProductGrid";
