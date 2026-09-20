@@ -22,10 +22,10 @@ export const MessageGod = () => {
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-ink px-5 py-3 font-display text-[11px] font-bold uppercase tracking-[0.13em] text-porcelain shadow-soft transition-colors hover:bg-accent"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.97 }}
-        aria-label="Message God"
+        aria-label="Message GODID"
       >
         <Sparkles size={13} />
-        Message God
+        Message GODID
       </motion.button>
 
       <AnimatePresence>
@@ -48,7 +48,7 @@ export const MessageGod = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">GODID Studio</p>
-                    <h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em]">Message God</h2>
+                    <h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em]">Message GODID</h2>
                   </div>
                   <button
                     onClick={() => setOpen(false)}

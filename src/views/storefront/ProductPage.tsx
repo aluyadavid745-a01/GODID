@@ -106,9 +106,9 @@ export const ProductPage = () => {
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm font-semibold">Quantity</span>
               <div className="flex border border-line bg-white">
-                <button className="px-4 py-2" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
+                <button type="button" className="px-4 py-2" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
                 <span className="min-w-10 px-3 py-2 text-center">{quantity}</span>
-                <button className="px-4 py-2" onClick={() => setQuantity(quantity + 1)}>+</button>
+                <button type="button" className="px-4 py-2" onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
             </div>
           </div>

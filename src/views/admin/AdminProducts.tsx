@@ -1,5 +1,5 @@
 'use client'
-import { Edit, Eye, Plus, Save, Trash2, X } from "lucide-react";
+import { Edit, Eye, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { DataTable } from "../../components/ui/DataTable";
@@ -67,6 +67,10 @@ export const AdminProducts = () => {
   const [newTierQty, setNewTierQty] = useState("");
   const [newTierPrice, setNewTierPrice] = useState("");
   const [newTierLabel, setNewTierLabel] = useState("");
+
+  // multi-image upload
+  const [imagesUploading, setImagesUploading] = useState(false);
+  const [imagesError, setImagesError] = useState("");
 
   useMeta("Product Management | GODID", "Create, edit, publish and manage GODID products.");
 
@@ -231,7 +235,49 @@ export const AdminProducts = () => {
             <Select label="Collection" value={editing.collectionIds[0] ?? ""} onChange={(e) => upd("collectionIds", e.target.value ? [e.target.value] : [])} options={[{ label: "No collection", value: "" }, ...collections.map((c) => ({ label: c.name, value: c.id }))]} />
 
             {/* ── Images ─────────────────────────────────────────────────── */}
-            <ImageUpload label="Main image" value={editing.images[0] ?? ""} uploadFn={(file) => uploadImage(`products/${editing.id}`, file)} onChange={(url) => upd("images", [url, ...editing.images.slice(1)])} />
+            <div className="grid gap-3 border border-line p-4">
+              <p className="text-sm font-semibold text-ink">Product Images</p>
+              <p className="text-xs text-muted">First image is the main image shown on listings. Add as many as you like.</p>
+              {editing.images.filter(Boolean).length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {editing.images.filter(Boolean).map((img, i) => (
+                    <div key={img} className="relative">
+                      <img src={img} alt={`Image ${i + 1}`} className="h-32 w-auto max-w-[120px] border border-line object-contain bg-bone" />
+                      {i === 0 && <span className="absolute left-0 top-0 bg-ink px-1.5 py-0.5 text-[10px] font-semibold text-white">Main</span>}
+                      <button type="button" onClick={() => upd("images", editing.images.filter((_, idx) => idx !== i))} className="absolute right-1 top-1 rounded bg-white p-0.5 shadow-sm hover:bg-bone">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className={`flex cursor-pointer items-center gap-2 border border-dashed border-line bg-bone/50 p-3 text-sm text-muted transition-colors hover:border-ink hover:text-ink ${imagesUploading ? "cursor-not-allowed opacity-50" : ""}`}>
+                <Upload size={15} />
+                {imagesUploading ? "Uploading…" : "Add image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={imagesUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !editing) return;
+                    e.target.value = "";
+                    setImagesError("");
+                    setImagesUploading(true);
+                    try {
+                      const url = await uploadImage(`products/${editing.id}`, file);
+                      upd("images", [...editing.images.filter(Boolean), url]);
+                    } catch (err) {
+                      setImagesError(err instanceof Error ? err.message : "Upload failed.");
+                    } finally {
+                      setImagesUploading(false);
+                    }
+                  }}
+                />
+              </label>
+              {imagesError ? <p className="text-xs text-red-600">{imagesError}</p> : null}
+            </div>
             <ImageUpload label="Hover image" value={editing.hoverImage} uploadFn={(file) => uploadImage(`products/${editing.id}/hover`, file)} onChange={(url) => upd("hoverImage", url)} />
 
             {/* ── Details ────────────────────────────────────────────────── */}

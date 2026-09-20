@@ -46,13 +46,13 @@ export const CartPage = () => {
                 <div className="min-w-0">
                   <Link href={`/product/${product.slug}`} className="font-display text-base font-semibold sm:text-xl">{product.name}</Link>
                   <p className="mt-2 text-sm text-muted">{variant.color} / {variant.size}</p>
-                  <button className="mt-5 text-sm font-semibold underline" onClick={() => removeItem(item.productId, item.variantId)}>Remove</button>
+                  <button type="button" className="mt-5 text-sm font-semibold underline" onClick={() => removeItem(item.productId, item.variantId)}>Remove</button>
                 </div>
                 <div className="col-span-2 flex items-center justify-between gap-3 border-t border-line pt-3 sm:col-span-1 sm:block sm:border-0 sm:pt-0 sm:text-right">
                   <div className="inline-flex border border-line bg-white">
-                    <button className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}>-</button>
+                    <button type="button" className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}>-</button>
                     <span className="min-w-8 px-2 py-1 text-center">{item.quantity}</span>
-                    <button className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}>+</button>
+                    <button type="button" className="px-3 py-1" onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}>+</button>
                   </div>
                   <p className="font-semibold sm:mt-4">{(() => { const base = product.salePrice ?? product.price; const bulk = (product.bulkPricing ?? []).filter((t) => item.quantity >= t.minQty).sort((a, b) => b.minQty - a.minQty)[0]; return formatNaira((bulk ? bulk.price : base) * item.quantity); })()}</p>
                 </div>

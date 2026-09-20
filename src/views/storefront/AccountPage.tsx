@@ -128,7 +128,7 @@ export const AddressesPage = () => {
         <Button className="w-fit md:col-span-2">Save address</Button>
       </form>
       <div className="grid gap-3">
-        {addresses.map((address) => <article key={address.id} className="border border-line bg-white p-4"><p className="font-semibold">{address.fullName}</p><p className="mt-1 text-sm text-muted">{address.street}, {address.city}, {address.state}</p><button className="mt-3 text-sm font-semibold underline" onClick={() => setForm(address)}>Edit</button></article>)}
+        {addresses.map((address) => <article key={address.id} className="border border-line bg-white p-4"><p className="font-semibold">{address.fullName}</p><p className="mt-1 text-sm text-muted">{address.street}, {address.city}, {address.state}</p><button type="button" className="mt-3 text-sm font-semibold underline" onClick={() => setForm(address)}>Edit</button></article>)}
       </div>
     </section>
   );

@@ -26,7 +26,7 @@ export const MessageGodSection = () => {
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/45">God in Every Design</p>
             <h2 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-[-0.05em] md:text-6xl">
-              Message<br />God.
+              Message<br />GODID.
             </h2>
             <p className="mt-5 max-w-sm text-base leading-relaxed text-white/60">
               A question. A creative idea. A style request. Whatever it is — the studio is listening.
@@ -50,7 +50,7 @@ export const MessageGodSection = () => {
                 className="flex items-center gap-2.5 border border-white px-6 py-3 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Send size={13} />
-                Send to God
+                Send to GODID
               </button>
             </div>
           </div>
