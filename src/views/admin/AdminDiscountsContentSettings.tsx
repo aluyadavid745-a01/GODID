@@ -258,12 +258,7 @@ export const AdminSettings = () => {
     await adminApi.updateSettings(settings);
     setNotice("Settings saved.");
   };
-  const reset = async () => {
-    if (!window.confirm("Reset products, orders, content, shipping and settings to demo data?")) return;
-    await adminApi.resetDemoStore();
-    adminApi.settings().then(setSettings);
-    setNotice("Demo data restored.");
-  };
+
   if (!settings) return null;
   return (
     <div className="grid gap-6">
@@ -279,7 +274,6 @@ export const AdminSettings = () => {
         <Input label="Security" defaultValue="Backend role validation, secure sessions, manual WhatsApp payment confirmation" />
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button className="w-fit" onClick={save}><Save size={16} /> Save settings</Button>
-          <Button type="button" variant="secondary" className="w-fit" onClick={reset}>Reset demo data</Button>
         </div>
       </section>
       <section className="grid gap-4 border border-line bg-white p-5">
